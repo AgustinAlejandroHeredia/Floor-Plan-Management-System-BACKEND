@@ -4,10 +4,11 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 // SWAGGER
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/jwt/jwt-auth.guard';
 
 @ApiTags('User')
+@ApiBearerAuth('access-token')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -32,8 +33,11 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Get('userInfo')
-  async getUserInfo(@Req() req){
-    return req.user
+  async getUserInfo(
+    @Req() req,
+  ){
+    const { internalId, ...userWithoutInternalId } = req.user;
+    return userWithoutInternalId;
   }
 
   @UseGuards(JwtAuthGuard)

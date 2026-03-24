@@ -98,6 +98,10 @@ export class UserService {
     }
   }
 
+  async getUserInfo(token: string) {
+    return this.authService.getUserInfo(token)
+  }
+
   async getUserOrganizations(userId: string): Promise<Organization[]> {
 
     const userObjectId = new Types.ObjectId(userId);
@@ -134,23 +138,27 @@ export class UserService {
   }
 
   // Used by jwt.strategy.ts
-  async getOrCreateUserFromPayload(payload: any): Promise<UserDocument> {
+  async getOrCreateUserFromToken(token: string): Promise<UserDocument> {
 
-    return this.userModel.findOneAndUpdate(
-      { authProviderId: payload.sub },
+    const authUser = await this.authService.getUserInfo(token);
+
+    const user = await this.userModel.findOneAndUpdate(
+      { authProviderId: authUser.id }, // filtro
       {
         $setOnInsert: {
-          authProviderId: payload.sub,
-          email: payload.email,
-          name: payload.name,
-          picture: payload.picture,
+          authProviderId: authUser.id,
+          email: authUser.email,
+          name: authUser.name,
+          picture: authUser.picture,
         },
       },
       {
-        new: true,
-        upsert: true,
-      },
+        new: true,      // devuelve el doc actualizado/creado
+        upsert: true,   // crea si no existe
+      }
     );
+
+    return user;
   }
 
 }

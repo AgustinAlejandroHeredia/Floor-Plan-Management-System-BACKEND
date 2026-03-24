@@ -20,6 +20,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      passReqToCallback: true,
       issuer: config.get<string>('AUTH0_ISSUER_URL'),
       audience: config.get<string>('AUTH0_AUDIENCE'),
       algorithms: ['RS256'],
@@ -32,16 +33,24 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
+  async validate(req: any, payload: any) {
 
-    const user = await this.userService.getOrCreateUserFromPayload(payload);
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    const user = await this.userService.getOrCreateUserFromToken(token);
 
     return {
       internalId: user._id.toString(),
-      sub: payload.sub,
-      email: payload.email,
-      name: payload.name,
-      picture: payload.picture,
+      sub: user.authProviderId,
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
     };
   }
 }

@@ -1,11 +1,12 @@
 import { Controller, Get, Headers, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 
 @ApiTags('Test')
 @Controller('test')
 export class AppController {
 
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({ summary: 'Testear recepción de token' })

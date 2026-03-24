@@ -34,7 +34,7 @@ export class Project {
     tecnicalDirection: string
 
     @Prop({ required: true, type: String })
-    state: string
+    status: string
 
     @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
     creatorUserId: Types.ObjectId
