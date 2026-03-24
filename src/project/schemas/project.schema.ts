@@ -36,10 +36,10 @@ export class Project {
     @Prop({ required: true, type: String })
     state: string
 
-    @Prop({ required: true, type: Types.ObjectId })
+    @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
     creatorUserId: Types.ObjectId
 
-    @Prop({ required: true, type: Types.ObjectId })
+    @Prop({ required: true, type: Types.ObjectId, ref: 'Organization' })
     organizationId: Types.ObjectId
 
 }

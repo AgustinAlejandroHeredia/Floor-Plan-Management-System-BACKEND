@@ -1,9 +1,13 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
-  imports: [PassportModule],
+  imports: [
+    PassportModule,
+    UserModule,
+  ],
   providers: [JwtStrategy],
   exports: [],
 })

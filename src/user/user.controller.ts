@@ -12,45 +12,43 @@ import { JwtAuthGuard } from 'src/jwt/jwt-auth.guard';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  /*
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
   }
 
-  @Get()
-  findAll() {
-    return this.userService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
-  }
-
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+    return this.userService.update(id, updateUserDto);
   }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
-  }
-  */
 
   @UseGuards(JwtAuthGuard)
-  @Get(':userInfo')
-  async getUserInfo(@Headers('authorization') authHeader: string){
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.userService.remove(id);
+  }
 
-    const token = authHeader.split(' ')[1];
+  @UseGuards(JwtAuthGuard)
+  @Get('userInfo')
+  async getUserInfo(@Req() req){
+    return req.user
+  }
 
-    const user = await this.userService.getOrCreateUser(token);
+  @UseGuards(JwtAuthGuard)
+  @Get('myOrganizations')
+  async getUserOrganizations(@Req() req){
+    return await this.userService.getUserOrganizations(req.user.internalId)
+  }
 
-    return user;
+  @UseGuards(JwtAuthGuard)
+  @Get('myProjects/:organizationId')
+  async getUserProjectsByOrganization(
+    @Req() req,
+    @Param('organizationId') organizationId: string,
+  ){
+    return await this.userService.getUserProjectsByOrganization(req.user.internalId, organizationId)
   }
 
 }

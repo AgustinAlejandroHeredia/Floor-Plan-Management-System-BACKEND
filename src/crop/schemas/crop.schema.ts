@@ -24,7 +24,7 @@ export class Crop {
     @Prop({ required: true, type: Date, default: Date.now })
     creationDate: Date
 
-    @Prop({ required: true, type: Types.ObjectId })
+    @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
     croppedBy: Types.ObjectId
 
     // diferences from blueprint.schema.ts
@@ -35,7 +35,7 @@ export class Crop {
     @Prop({ required: true, type: String })
     label: string
 
-    @Prop({ required: true, type: Types.ObjectId }) // id from the original bluepint
+    @Prop({ required: true, type: Types.ObjectId, ref: 'Blueprint' }) // id from the original bluepint
     cropFrom: Types.ObjectId
 }
 

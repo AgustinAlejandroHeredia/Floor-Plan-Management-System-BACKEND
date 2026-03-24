@@ -7,10 +7,10 @@ export type ProjectMembershipDocument = ProjectMembership & Document;
 @Schema()
 export class ProjectMembership {
 
-    @Prop({ required: true, type: Types.ObjectId })
+    @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
     userId: Types.ObjectId
 
-    @Prop({ required: true, type: Types.ObjectId })
+    @Prop({ required: true, type: Types.ObjectId, ref: 'Project' })
     projectId: Types.ObjectId
 
     @Prop({ 

@@ -1,4 +1,4 @@
-import { IsMongoId, IsString } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class CreateOrganizationDto {
 
@@ -11,7 +11,7 @@ export class CreateOrganizationDto {
   @IsString()
   contact: string;
 
-  @IsMongoId()
-  forma: string;
+  @IsString()
+  partida: string;
 
 }

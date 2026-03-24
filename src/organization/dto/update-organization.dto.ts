@@ -14,4 +14,8 @@ export class UpdateOrganizationDto {
   @IsOptional()
   contact?: string;
 
+  @IsString()
+  @IsOptional()
+  partida?: string;
+
 }

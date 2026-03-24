@@ -15,8 +15,8 @@ export class Organization {
     @Prop({ required: true, type: String })
     contact: string
 
-    @Prop({ required: true, type: Types.ObjectId })
-    forma: Types.ObjectId
+    @Prop({ required: true, type: String })
+    partida: string
 
 }
 
