@@ -2,16 +2,16 @@ import { IsString, IsEmail } from 'class-validator';
 
 export class CreateUserDto {
 
-    @IsString()
-    id: string // auth0 --> sub
+  @IsString()
+  authProviderId: string;
 
-    @IsEmail()
-    email: string
+  @IsEmail()
+  email: string;
 
-    @IsString()
-    name: string
+  @IsString()
+  name: string;
 
-    @IsString()
-    picture: string
+  @IsString()
+  picture: string;
 
 }

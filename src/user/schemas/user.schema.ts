@@ -7,7 +7,7 @@ export type UserDocument = User & Document;
 export class User {
 
   @Prop({ required: true })
-  auth0Id: string;
+  authProviderId: string;
 
   @Prop({ required: true })
   email: string;
@@ -17,12 +17,6 @@ export class User {
 
   @Prop({ required: true })
   picture: string;
-
-  @Prop({ required: true, default: false })
-  admin: boolean;
-
-  @Prop({ required: true, default: false })
-  creator: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

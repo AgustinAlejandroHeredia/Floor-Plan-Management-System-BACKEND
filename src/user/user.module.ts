@@ -7,7 +7,7 @@ import { AuthModule } from 'src/auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
 
 // SCHEMA
-import { User, UserSchema } from 'src/schemas/user.schema';
+import { User, UserSchema } from 'src/user/schemas/user.schema';
 
 @Module({
   imports: [

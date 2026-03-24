@@ -7,6 +7,13 @@ import { UserModule } from './user/user.module';
 
 // MONGOOSE
 import { MongooseModule } from '@nestjs/mongoose';
+import { BlueprintModule } from './blueprint/blueprint.module';
+import { OrganizationModule } from './organization/organization.module';
+import { ProjectModule } from './project/project.module';
+import { InvitationModule } from './invitation/invitation.module';
+import { CropModule } from './crop/crop.module';
+import { OrganizationMembershipModule } from './organization_membership/organization_membership.module';
+import { ProjectMembershipModule } from './project_membership/project_membership.module';
 
 @Module({
   imports: [
@@ -25,6 +32,20 @@ import { MongooseModule } from '@nestjs/mongoose';
     JwtModule,
 
     UserModule,
+
+    BlueprintModule,
+
+    OrganizationModule,
+
+    ProjectModule,
+
+    InvitationModule,
+
+    CropModule,
+
+    OrganizationMembershipModule,
+
+    ProjectMembershipModule,
     
   ],
   controllers: [AppController],

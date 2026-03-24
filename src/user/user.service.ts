@@ -5,7 +5,7 @@ import { AuthService, AuthUser } from 'src/auth/auth.service';
 
 // MONGOOSE
 import { InjectModel } from '@nestjs/mongoose';
-import { User, UserDocument } from 'src/schemas/user.schema';
+import { User, UserDocument } from 'src/user/schemas/user.schema';
 import { Model } from 'mongoose';
 
 @Injectable()
