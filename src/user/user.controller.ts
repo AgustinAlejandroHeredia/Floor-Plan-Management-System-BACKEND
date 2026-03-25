@@ -6,6 +6,9 @@ import { UpdateUserDto } from './dto/update-user.dto';
 // SWAGGER
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/jwt/jwt-auth.guard';
+import { AccessGuard } from 'src/auth/guards/access.guard';
+import { UserRoles } from 'src/auth/decorators/user-roles.decorator';
+import { UserRole } from 'src/common/role.enum';
 
 @ApiTags('User')
 @ApiBearerAuth('access-token')
@@ -31,7 +34,9 @@ export class UserController {
     return this.userService.remove(id);
   }
 
-  @UseGuards(JwtAuthGuard)
+  //@UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UserRoles(UserRole.NONE)
   @Get('userInfo')
   async getUserInfo(
     @Req() req,

@@ -1,5 +1,5 @@
 import { IsEnum, IsMongoId } from 'class-validator';
-import { Role } from 'src/common/role.enum';
+import { ProjectRole } from 'src/common/role.enum';
 
 export class CreateProjectMembershipDto {
 
@@ -9,7 +9,7 @@ export class CreateProjectMembershipDto {
   @IsMongoId()
   organizationId: string;
 
-  @IsEnum(Role)
-  role: Role;
+  @IsEnum(ProjectRole)
+  projectRole: ProjectRole;
 
 }

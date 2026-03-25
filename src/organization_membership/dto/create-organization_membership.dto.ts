@@ -1,4 +1,5 @@
-import { IsMongoId } from 'class-validator';
+import { IsEnum, IsMongoId } from 'class-validator';
+import { OrganizationRole } from 'src/common/role.enum';
 
 export class CreateOrganizationMembershipDto {
 
@@ -7,5 +8,8 @@ export class CreateOrganizationMembershipDto {
 
   @IsMongoId()
   organizationId: string;
+
+  @IsEnum(OrganizationRole)
+  organizationRole: OrganizationRole;
 
 }

@@ -1,6 +1,14 @@
-export enum Role {
-  COMMON = 1,
-  CREATOR = 2,
-  ADMIN = 3,
-  SUPER_ADMIN = 4
+export enum OrganizationRole {
+  MEMBER = 'member',
+  ADMIN = 'admin',
+}
+
+export enum ProjectRole {
+  VIEWER = 'viewer',
+  CREATOR = 'creator',
+}
+
+export enum UserRole {
+  NONE = 'none',
+  SUPERADMIN = 'super_admin',
 }
