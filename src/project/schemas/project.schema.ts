@@ -31,7 +31,7 @@ export class Project {
     owner: string
 
     @Prop({ required: true, type: String })
-    tecnicalDirection: string
+    technicalDirection: string
 
     @Prop({ required: true, type: String })
     status: string
