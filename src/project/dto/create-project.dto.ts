@@ -1,5 +1,6 @@
-import { IsMongoId, IsString } from 'class-validator';
+import { IsEnum, IsMongoId, IsString } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
+import { ProjectStatus } from 'src/common/status.enum';
 
 export class CreateProjectDto {
 
@@ -30,8 +31,8 @@ export class CreateProjectDto {
   @IsString()
   tecnicalDirection: string;
 
-  @IsString()
-  state: string;
+  @IsEnum(ProjectStatus)
+  status: ProjectStatus;
 
   @IsMongoId()
   creatorUserId: string;

@@ -30,6 +30,9 @@ export class Blueprint {
     @Prop({ required: true, type: Date, default: Date.now })
     creationDate: Date
 
+    @Prop({ required: true, type: [String] })
+    tags: string[]
+
     @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
     uploadedBy: Types.ObjectId
 

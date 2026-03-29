@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import { ProjectStatus } from 'src/common/status.enum';
 
 export type ProjectDocument = Project & Document;
 
@@ -33,8 +34,13 @@ export class Project {
     @Prop({ required: true, type: String })
     technicalDirection: string
 
-    @Prop({ required: true, type: String })
-    status: string
+    @Prop({ 
+        required: true, 
+        type: String, 
+        enum: ProjectStatus, 
+        default: ProjectStatus.PENDING 
+    })
+    status: ProjectStatus
 
     @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
     creatorUserId: Types.ObjectId

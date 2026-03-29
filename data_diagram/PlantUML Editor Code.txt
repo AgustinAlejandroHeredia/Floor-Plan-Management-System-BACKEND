@@ -1,0 +1,65 @@
+class Organization{
+    name: string
+    address: string
+    contact: string
+    partida: string
+}
+
+class OrganiztionMembership{
+    userId: MongoID
+    organizationId: MongoID
+    organizationRole: OrganizationRole
+}
+
+OrganiztionMembership --> Organization 
+OrganiztionMembership --> User
+
+class User{
+    authProviderId: string
+    email: string
+    name: string
+    picture: string
+    globalRole: UserRole
+}
+
+class ProjectMembership{
+    userId: MongoID
+    projectId: MongoID
+    projectRole: ProjectRole
+}
+
+ProjectMembership --> User
+ProjectMembership --> Project
+
+class Project{
+    projectName: string
+    record: string
+    adress: string
+    scale: string
+    others: string
+    references: string
+    background: string
+    owner: MongoID
+    technicalDirection: string
+    status: ProjectStatus
+    organizationId: MongoID
+    creatorUserId: MongoID
+}
+
+Project --> Organization
+
+class Blueprint{
+    filename: string
+    projectId: MongoID
+    organizationId: MongoID
+    storageId: string
+    encoding: string
+    mimetype: string
+    size: number
+    creationDate: Date
+    tags: string[]
+    uploadedBy: MongoID
+}
+
+Blueprint --> User
+Blueprint --> Project

@@ -1,12 +1,7 @@
-import { IsMongoId, IsString, IsOptional } from 'class-validator';
+import { IsMongoId, IsString, IsOptional, IsEnum } from 'class-validator';
+import { ProjectStatus } from 'src/common/status.enum';
 
 export class UpdateProjectDto {
-
-  @IsMongoId()
-  creatorUserId?: string;
-
-  @IsMongoId()
-  organizationId?: string;
 
   @IsString()
   @IsOptional()
@@ -43,9 +38,15 @@ export class UpdateProjectDto {
   @IsString()
   @IsOptional()
   tecnicalDirection?: string;
-
-  @IsString()
+  
   @IsOptional()
-  state?: string;
+  @IsEnum(ProjectStatus)
+  status?: ProjectStatus;
+
+  @IsMongoId()
+  creatorUserId?: string;
+
+  @IsMongoId()
+  organizationId?: string;
 
 }
