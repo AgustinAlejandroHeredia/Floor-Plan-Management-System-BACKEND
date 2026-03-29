@@ -101,6 +101,7 @@ export class BlueprintController {
 
   // GET by project
   @Get('/project/:projectId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get blueprints by project id' })
   @ApiParam({ name: 'projectId', type: String })
   @ApiResponse({ status: 200, description: 'Blueprints list' })
