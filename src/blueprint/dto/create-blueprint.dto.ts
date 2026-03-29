@@ -11,23 +11,8 @@ export class CreateBlueprintDto {
   @IsMongoId()
   organizationId: string;
 
-  @IsString()
-  storageId: string;
-
-  @IsString()
-  encoding: string;
-
-  @IsString()
-  mimetype: string;
-
-  @IsNumber()
-  size: number;
-
   @IsArray()
   @IsString({ each: true })
   tags: string[]
-
-  @IsString()
-  uploadedBy: string;
 
 }

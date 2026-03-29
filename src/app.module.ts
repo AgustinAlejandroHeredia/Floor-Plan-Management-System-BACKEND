@@ -11,7 +11,6 @@ import { BlueprintModule } from './blueprint/blueprint.module';
 import { OrganizationModule } from './organization/organization.module';
 import { ProjectModule } from './project/project.module';
 import { InvitationModule } from './invitation/invitation.module';
-import { CropModule } from './crop/crop.module';
 import { OrganizationMembershipModule } from './organization_membership/organization_membership.module';
 import { ProjectMembershipModule } from './project_membership/project_membership.module';
 
@@ -40,8 +39,6 @@ import { ProjectMembershipModule } from './project_membership/project_membership
     ProjectModule,
 
     InvitationModule,
-
-    CropModule,
 
     OrganizationMembershipModule,
 

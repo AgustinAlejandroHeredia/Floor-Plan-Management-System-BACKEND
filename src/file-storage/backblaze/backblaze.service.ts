@@ -78,7 +78,8 @@ export class BackblazeService implements FileStorageService {
     try {
       const auth = await this.authorize();
 
-      const response = await axios.post(
+      // 🔍 1. Obtener metadata (para fileName)
+      const fileInfo = await axios.post(
         `${auth.apiUrl}/b2api/v2/b2_get_file_info`,
         { fileId },
         {
@@ -88,12 +89,32 @@ export class BackblazeService implements FileStorageService {
         }
       );
 
+      const fileName = fileInfo.data.fileName;
+
+      // 📥 2. Construir URL de descarga
+      const downloadUrl = `${auth.downloadUrl}/file/${this.config.get(
+        'BACKBLAZE_BUCKET_NAME'
+      )}/${encodeURIComponent(fileName)}`;
+
+      // 🔐 3. Descargar archivo con autorización
+      const fileResponse = await axios.get(downloadUrl, {
+        responseType: 'arraybuffer',
+        headers: {
+          Authorization: auth.authorizationToken, // 🔥 necesario si el bucket es privado
+        },
+      });
+
       return {
-        id: response.data.fileId,
-        name: response.data.fileName,
+        id: fileId,
+        name: fileName,
+        buffer: Buffer.from(fileResponse.data),
+        contentType: fileResponse.headers['content-type'],
       };
     } catch (error) {
-      console.error('❌ Get file error:', error.response?.data);
+      console.error(
+        '❌ Get file error:',
+        error.response?.data?.toString?.() || error.message
+      );
       throw new InternalServerErrorException('Error obteniendo archivo');
     }
   }
@@ -134,11 +155,24 @@ export class BackblazeService implements FileStorageService {
     try {
       const auth = await this.authorize();
 
+      // 🔍 Obtener fileName desde el fileId
+      const fileInfo = await axios.post(
+        `${auth.apiUrl}/b2api/v2/b2_get_file_info`,
+        { fileId },
+        {
+          headers: {
+            Authorization: auth.authorizationToken,
+          },
+        }
+      );
+
+      const fileName = fileInfo.data.fileName;
+
       return `${auth.downloadUrl}/file/${this.config.get(
         'BACKBLAZE_BUCKET_NAME'
-      )}/${fileId}`;
+      )}/${encodeURIComponent(fileName)}`;
     } catch (error) {
-      console.error('❌ Download URL error:', error);
+      console.error('❌ Download URL error:', error.response?.data);
       throw new InternalServerErrorException('Error generando URL');
     }
   }
@@ -148,11 +182,25 @@ export class BackblazeService implements FileStorageService {
     try {
       const auth = await this.authorize();
 
+      // 🔍 Obtener fileName real
+      const fileInfo = await axios.post(
+        `${auth.apiUrl}/b2api/v2/b2_get_file_info`,
+        { fileId },
+        {
+          headers: {
+            Authorization: auth.authorizationToken,
+          },
+        }
+      );
+
+      const fileName = fileInfo.data.fileName;
+
+      // 🗑 Eliminar correctamente
       await axios.post(
         `${auth.apiUrl}/b2api/v2/b2_delete_file_version`,
         {
           fileId,
-          fileName: fileId, // necesario aunque es raro en B2
+          fileName,
         },
         {
           headers: {

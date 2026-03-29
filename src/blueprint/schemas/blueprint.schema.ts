@@ -9,7 +9,7 @@ export class Blueprint {
     @Prop({ required: true, type: String })
     filename: string
 
-    @Prop({ required: true, type: Types.ObjectId, ref: 'Project'})
+    @Prop({ required: true, type: Types.ObjectId, ref: 'Project', index: true })
     projectId: Types.ObjectId
 
     @Prop({ required: true, type: Types.ObjectId, ref: 'Organization'})
@@ -33,7 +33,7 @@ export class Blueprint {
     @Prop({ required: true, type: [String] })
     tags: string[]
 
-    @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
+    @Prop({ required: true, type: Types.ObjectId, ref: 'User', index: true })
     uploadedBy: Types.ObjectId
 
 }

@@ -16,6 +16,6 @@ export class UpdateOrganizationDto {
 
   @IsString()
   @IsOptional()
-  partida?: string;
+  record?: string;
 
 }

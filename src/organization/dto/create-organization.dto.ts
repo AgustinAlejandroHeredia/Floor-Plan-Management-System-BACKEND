@@ -12,6 +12,6 @@ export class CreateOrganizationDto {
   contact: string;
 
   @IsString()
-  partida: string;
+  record: string;
 
 }

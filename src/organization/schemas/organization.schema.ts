@@ -16,7 +16,7 @@ export class Organization {
     contact: string
 
     @Prop({ required: true, type: String })
-    partida: string
+    record: string
 
 }
 
