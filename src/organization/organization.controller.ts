@@ -8,6 +8,7 @@ import {
   UseGuards,
   Patch,
   Req,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { OrganizationService } from './organization.service';
@@ -137,4 +138,41 @@ export class OrganizationController {
   ){
     return this.organizationService.myOrganizationRole(req.user.internalId, organizationId)
   }
+
+  // UPDATE USER ROLE
+  @Patch('membership/:organizationId/:userId/role')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Change the role of a user in a organization' })
+  @ApiParam({ name: 'organizationId', type: String })
+  @ApiParam({ name: 'userId', type: String })
+  @ApiParam({ name: 'newOrganizationRole', type: String })
+  @ApiResponse({ status: 200, description: 'Organization membership role updated successfully' })
+  changeUserRole(
+    @Param('organizationId') projectId: string,
+    @Param('userId') userId: string,
+    @Body('newOrganizationRole') newOrganizationRole: OrganizationRole,
+  ) {
+    if (!Object.values(OrganizationRole).includes(newOrganizationRole as OrganizationRole)) {
+      throw new BadRequestException(
+        `Invalid project role. Must be one of: ${Object.values(OrganizationRole).join(', ')}`,
+      );
+    }
+
+    return this.organizationService.changeUserRole(userId, projectId, newOrganizationRole);
+  }
+
+  // REMOVE USER FROM ORGANIZATION
+  @Delete('user/:userId/:organizationId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Delete user from organization' })
+  @ApiParam({ name: 'userId', type: String })
+  @ApiParam({ name: 'organizationId', type: String })
+  @ApiResponse({ status: 200, description: 'User deleted from organization successfully' })
+  deleteUserFromOrganization(
+    @Param('userId') userId: string,
+    @Param('organizationId') organizationId: string,
+  ){
+    return this.organizationService.removeUserFromOrganization(organizationId, userId)
+  }
+
 }

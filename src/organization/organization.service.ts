@@ -13,6 +13,7 @@ import { Organization, OrganizationDocument } from './schemas/organization.schem
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 import { OrganizationMembership } from 'src/organization_membership/schemas/organization_membership.schema';
 import { OrganizationRole } from 'src/common/role.enum';
+import { ProjectMembershipService } from 'src/project_membership/project_membership.service';
 
 @Injectable()
 export class OrganizationService {
@@ -21,6 +22,7 @@ export class OrganizationService {
     @InjectModel(Organization.name)
     private readonly organizationModel: Model<OrganizationDocument>,
     private readonly organizationMembershipService: OrganizationMembershipService,
+    private readonly projectMembershipService: ProjectMembershipService,
   ) {}
 
   // CREATE
@@ -189,6 +191,10 @@ export class OrganizationService {
     // verificar que la org exista
     await this.findOne(organizationId);
 
+    // expulsa al user de todos los proyectos de esa organizacion
+    await this.projectMembershipService.deleteFromAllProjectsInOrganization(userId, organizationId)
+
+    // expulsa al user de la organizacion
     await this.organizationMembershipService.deleteByUserAndOrganization(
       userId,
       organizationId,

@@ -8,6 +8,7 @@ import {
   Patch,
   UseGuards,
   Req,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { ProjectService } from './project.service';
@@ -25,6 +26,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
+import { ProjectRole } from 'src/common/role.enum';
 
 @ApiTags('Projects')
 @ApiBearerAuth('access-token')
@@ -107,6 +109,20 @@ export class ProjectController {
     return this.projectService.remove(id);
   }
 
+  // DELETE USER FROM PROJECT
+  @Delete('user/:projectId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Delete user from project' })
+  @ApiParam({ name: 'userId', type: String })
+  @ApiParam({ name: 'projectId', type: String })
+  @ApiResponse({ status: 200, description: 'Project deleted successfully' })
+  deleteUserFromProject(
+    @Param('userId') userId: string,
+    @Param('projectId') projectId: string,
+  ){
+    return this.projectService.deleteUserFromProject(userId, projectId)
+  }
+
   // ADD USER TO PROJECT
   @Post('addUser/:projectId')
   @UseGuards(JwtAuthGuard)
@@ -144,5 +160,27 @@ export class ProjectController {
     @Param('projectId') projectId: string,
   ){
     return this.projectService.myProjectRole(req.user.internalId, projectId)
+  }
+
+  // UPDATE USER ROLE
+  @Patch('membership/:projectId/:userId/:newProjectRole')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Change the role of a user in a project' })
+  @ApiParam({ name: 'projectId', type: String })
+  @ApiParam({ name: 'userId', type: String })
+  @ApiParam({ name: 'newProjectRole', type: String })
+  @ApiResponse({ status: 200, description: 'Project membership role updated successfully' })
+  changeUserRole(
+    @Param('projectId') projectId: string,
+    @Param('userId') userId: string,
+    @Param('newProjectRole') newProjectRole: ProjectRole,
+  ) {
+    if (!Object.values(ProjectRole).includes(newProjectRole as ProjectRole)) {
+      throw new BadRequestException(
+        `Invalid project role. Must be one of: ${Object.values(ProjectRole).join(', ')}`,
+      );
+    }
+
+    return this.projectService.changeUserRoleByUserAndProject(userId, projectId, newProjectRole);
   }
 }

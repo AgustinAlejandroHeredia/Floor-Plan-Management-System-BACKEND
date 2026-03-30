@@ -50,6 +50,20 @@ export class OrganizationMembershipService {
     });
   }
 
+  // GET BY USER ID AND ORGANIZATION ID
+  async findByUserIdAndOrganizationId(userId: string, organizationId: string): Promise<OrganizationMembershipDocument> {
+    const membership = await this.membershipModel.findOne({
+      userId: new Types.ObjectId(userId),
+      organizationId: new Types.ObjectId(organizationId), 
+    })
+
+    if(!membership) {
+      throw new NotFoundException('Organization membership not found');
+    }
+
+    return membership
+  }
+
   // UPDATE ROLE (solo role)
   async updateRole(
     membershipId: string,

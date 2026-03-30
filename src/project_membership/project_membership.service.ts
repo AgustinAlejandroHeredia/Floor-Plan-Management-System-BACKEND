@@ -72,17 +72,35 @@ export class ProjectMembershipService {
     });
   }
 
+  // GET BY USER ID AND PROJECT ID
+  async findByUserIdAndProjectId(userId: string, projectId: string): Promise<ProjectMembershipDocument> {
+    const membership = await this.membershipModel.findOne({
+      userId: new Types.ObjectId(userId),
+      projectId: new Types.ObjectId(projectId),
+    })
+
+    if(!membership) {
+      throw new NotFoundException('Project membership not found');
+    }
+
+    return membership
+  }
+
   // UPDATE ROLE
   async updateRole(
     membershipId: string,
     updateDto: UpdateProjectMembershipDto,
   ): Promise<ProjectMembership> {
 
+    console.log("UPDATE DTO DATA : ", updateDto)
+
     const updated = await this.membershipModel.findByIdAndUpdate(
       membershipId,
       { $set: { projectRole: updateDto.projectRole } },
       { new: true },
     );
+
+    console.log("UPDATED DATA : ", updated)
 
     if (!updated) {
       throw new NotFoundException('Membership not found');
@@ -114,6 +132,31 @@ export class ProjectMembershipService {
 
     if (!result) {
       throw new NotFoundException('Membership not found');
+    }
+  }
+
+  // DELETE USER FROM ALL PROJECTS (was quicked from the organization)
+  async deleteFromAllProjectsInOrganization(
+    userId: string,
+    organizationId: string,
+  ): Promise<void> {
+
+    // Obtener todos los proyectos de esa organización
+    const projects = await this.projectService.findByOrganizationId(organizationId);
+    const projectIds = projects.map(p => p._id);
+
+    if (projectIds.length === 0) return; // No hay proyectos, nada que borrar
+
+    // Borrar todos los memberships del usuario en esos proyectos
+    const result = await this.membershipModel.deleteMany({
+      userId: new Types.ObjectId(userId),
+      projectId: { $in: projectIds },
+    });
+
+    if (result.deletedCount === 0) {
+      throw new NotFoundException(
+        'No memberships found for this user in the specified organization',
+      );
     }
   }
 

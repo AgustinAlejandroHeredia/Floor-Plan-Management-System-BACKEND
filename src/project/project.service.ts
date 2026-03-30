@@ -78,12 +78,50 @@ export class ProjectService {
   }
 
 
+  // CHANGE USER ROLE BY USER + PROJECT
+  async changeUserRoleByUserAndProject(
+    userId: string,
+    projectId: string,
+    newRole: ProjectRole,
+  ): Promise<boolean> {
+
+    try {
+      // 1. Buscar el membership existente
+      const membership = await this.projectMembershipService.findByUserIdAndProjectId(
+        userId,
+        projectId,
+      );
+
+      // 2. Actualizar el rol
+      await this.projectMembershipService.updateRole(membership._id.toString(), { projectRole: newRole });
+
+      return true;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        // Membership no existe
+        return false;
+      }
+      // Otros errores se pueden propagar o también devolver false
+      return false;
+    }
+  }
+
+
   // DELETE
   async remove(id: string): Promise<{ deleted: boolean }> {
     if (!Types.ObjectId.isValid(id)) throw new NotFoundException('Project not found');
     const result = await this.projectModel.findByIdAndDelete(id);
     if (!result) throw new NotFoundException('Project not found');
     return { deleted: true };
+  }
+
+
+  // DELETE USER FROM PROJECT
+  async deleteUserFromProject(
+    userId: string,
+    projectId: string,
+  ): Promise<void>{
+    await this.projectMembershipService.deleteByUserAndProject(userId, projectId)
   }
 
 
@@ -149,7 +187,7 @@ export class ProjectService {
     return projectRole;
   }
 
-  
+
   /*
   // USED BEFORE ON project.membership.service.ts LINE 31
   async findById(projectId: string) {
@@ -164,4 +202,17 @@ export class ProjectService {
     return project;
   }
   */
+
+  // only used when deletes user from organizations, ProjectDocument is necesary
+  async findByOrganizationId(organizationId: string): Promise<ProjectDocument[]> {
+    
+    const orgObjectId = new Types.ObjectId(organizationId);
+    const projects = await this.projectModel.find({ organizationId: orgObjectId });
+
+    if (!projects || projects.length === 0) {
+      throw new NotFoundException(`No projects found for organization ${organizationId}`);
+    }
+
+    return projects;
+  }
 }
