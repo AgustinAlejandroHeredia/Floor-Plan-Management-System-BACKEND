@@ -19,8 +19,18 @@ export class OrganizationMembership {
         enum: OrganizationRole,
         default: OrganizationRole.MEMBER,
     })
-    organizationRole: string
+    organizationRole: OrganizationRole
 
 }
 
 export const OrganizationMembershipSchema = SchemaFactory.createForClass(OrganizationMembership);
+
+// NO DUPLICATES
+OrganizationMembershipSchema.index(
+  { userId: 1, organizationId: 1 },
+  { unique: true }
+);
+
+// OPTIONAL INDEXES
+OrganizationMembershipSchema.index({ userId: 1 });
+OrganizationMembershipSchema.index({ projectId: 1 });

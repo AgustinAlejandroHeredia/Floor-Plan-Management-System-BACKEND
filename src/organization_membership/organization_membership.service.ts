@@ -1,26 +1,129 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+
+// DTOs
 import { CreateOrganizationMembershipDto } from './dto/create-organization_membership.dto';
 import { UpdateOrganizationMembershipDto } from './dto/update-organization_membership.dto';
 
+// SCHEMAs
+import { OrganizationMembership, OrganizationMembershipDocument } from './schemas/organization_membership.schema';
+
+
 @Injectable()
 export class OrganizationMembershipService {
-  create(createOrganizationMembershipDto: CreateOrganizationMembershipDto) {
-    return 'This action adds a new organizationMembership';
+
+  constructor(
+    @InjectModel(OrganizationMembership.name)
+    private readonly membershipModel: Model<OrganizationMembershipDocument>,
+  ) {}
+
+  // CREATE
+  async create(createDto: CreateOrganizationMembershipDto): Promise<OrganizationMembership> {
+    try {
+      const created = new this.membershipModel({
+        ...createDto,
+        userId: new Types.ObjectId(createDto.userId),
+        organizationId: new Types.ObjectId(createDto.organizationId),
+      });
+
+      return await created.save();
+    } catch (error) {
+      // Error de índice único (duplicado)
+      if (error.code === 11000) {
+        throw new BadRequestException('User is already a member of this organization');
+      }
+      throw error;
+    }
   }
 
-  findAll() {
-    return `This action returns all organizationMembership`;
+  // GET BY ORGANIZATION ID
+  async findByOrganizationId(organizationId: string): Promise<OrganizationMembership[]> {
+    return this.membershipModel.find({
+      organizationId: new Types.ObjectId(organizationId),
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} organizationMembership`;
+  // GET BY USER ID
+  async findByUserId(userId: string): Promise<OrganizationMembership[]> {
+    return this.membershipModel.find({
+      userId: new Types.ObjectId(userId),
+    });
   }
 
-  update(id: number, updateOrganizationMembershipDto: UpdateOrganizationMembershipDto) {
-    return `This action updates a #${id} organizationMembership`;
+  // UPDATE ROLE (solo role)
+  async updateRole(
+    membershipId: string,
+    updateDto: UpdateOrganizationMembershipDto,
+  ): Promise<OrganizationMembership> {
+
+    const updated = await this.membershipModel.findByIdAndUpdate(
+      membershipId,
+      { $set: { organizationRole: updateDto.organizationRole } },
+      { new: true },
+    );
+
+    if (!updated) {
+      throw new NotFoundException('Membership not found');
+    }
+
+    return updated;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} organizationMembership`;
+  // DELETE BY USER + ORGANIZATION
+  async deleteByUserAndOrganization(
+    userId: string,
+    organizationId: string,
+  ): Promise<void> {
+
+    const result = await this.membershipModel.findOneAndDelete({
+      userId: new Types.ObjectId(userId),
+      organizationId: new Types.ObjectId(organizationId),
+    });
+
+    if (!result) {
+      throw new NotFoundException('Membership not found');
+    }
   }
+
+  // DELETE BY MEMBERSHIP ID
+  async deleteById(membershipId: string): Promise<void> {
+
+    const result = await this.membershipModel.findByIdAndDelete(membershipId);
+
+    if (!result) {
+      throw new NotFoundException('Membership not found');
+    }
+  }
+
+  // EXISTS CHECK
+  async exists(userId: string, organizationId: string): Promise<boolean> {
+    const result = await this.membershipModel.exists({
+      userId: new Types.ObjectId(userId),
+      organizationId: new Types.ObjectId(organizationId),
+    });
+
+    return !!result;
+  }
+
+  // GET USER ROLE OF MEMBERSHIP
+  async getUserRole(
+    userId: string,
+    organizationId: string,
+  ): Promise<string> {
+
+    const membership = await this.membershipModel
+      .findOne({
+        userId: new Types.ObjectId(userId),
+        organizationId: new Types.ObjectId(organizationId),
+      })
+      .select('organizationRole');
+
+    if (!membership) {
+      throw new NotFoundException('User is not a member of this organization');
+    }
+
+    return membership.organizationRole;
+  }
+
 }

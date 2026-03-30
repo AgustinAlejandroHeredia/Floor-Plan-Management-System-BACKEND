@@ -7,7 +7,7 @@ export class CreateProjectMembershipDto {
   userId: string;
 
   @IsMongoId()
-  organizationId: string;
+  projectId: string;
 
   @IsEnum(ProjectRole)
   projectRole: ProjectRole;

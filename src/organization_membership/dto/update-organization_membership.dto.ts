@@ -1,14 +1,9 @@
-import { IsEnum, IsMongoId } from 'class-validator';
+import { IsEnum, IsMongoId, IsOptional } from 'class-validator';
 import { OrganizationRole } from 'src/common/role.enum';
 
 export class UpdateOrganizationMembershipDto {
 
-  @IsMongoId()
-  userId?: string;
-
-  @IsMongoId()
-  organizationId?: string;
-
+  @IsOptional()
   @IsEnum(OrganizationRole)
   organizationRole?: OrganizationRole;
 

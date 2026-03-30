@@ -15,6 +15,7 @@ export class ProjectMembership {
 
     @Prop({ 
         required: true,
+        type: String,
         enum: ProjectRole,
         default: ProjectRole.VIEWER,
     }) 
@@ -23,3 +24,13 @@ export class ProjectMembership {
 }
 
 export const ProjectMembershipSchema = SchemaFactory.createForClass(ProjectMembership);
+
+// NO DUPLICATES
+ProjectMembershipSchema.index(
+  { userId: 1, projectId: 1 },
+  { unique: true }
+);
+
+// OPTIONAL INDEXES
+ProjectMembershipSchema.index({ userId: 1 });
+ProjectMembershipSchema.index({ projectId: 1 });
