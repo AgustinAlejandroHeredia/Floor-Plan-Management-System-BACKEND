@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
@@ -24,13 +24,36 @@ export class OrganizationService {
   ) {}
 
   // CREATE
-  async create(createDto: CreateOrganizationDto): Promise<Organization> {
+  async create(
+    createDto: CreateOrganizationDto,
+    creatorUserId: string,
+  ): Promise<Organization> {
     try {
+      // Crear la organización
       const created = new this.organizationModel(createDto);
-      return await created.save();
+      const savedOrganization = await created.save();
+
+      // Crear automáticamente el OrganizationMembership del creador
+      try {
+        await this.organizationMembershipService.create({
+          userId: creatorUserId,
+          organizationId: savedOrganization._id.toString(),
+          organizationRole: OrganizationRole.ADMIN, // rol de administrador
+        });
+      } catch (membershipError) {
+        console.log('ERROR creando OrganizationMembership:', membershipError);
+        throw new InternalServerErrorException(
+          'Error creating organization membership for the creator',
+        );
+      }
+
+      return savedOrganization;
+
     } catch (error) {
       if (error.code === 11000) {
-        throw new BadRequestException('Organization with provided unique field (name, email or phone number) already exists');
+        throw new BadRequestException(
+          'Organization with provided unique field (name, email or phone number) already exists',
+        );
       }
       throw error;
     }
@@ -144,7 +167,6 @@ export class OrganizationService {
   async addUserToOrganization(
     organizationId: string,
     userId: string,
-    role: OrganizationRole,
   ): Promise<OrganizationMembership> {
 
     // verificar que la org exista
@@ -153,7 +175,7 @@ export class OrganizationService {
     return this.organizationMembershipService.create({
       userId,
       organizationId,
-      organizationRole: role,
+      organizationRole: OrganizationRole.MEMBER,
     });
   }
 
@@ -196,6 +218,21 @@ export class OrganizationService {
       membership._id.toString(),
       { organizationRole: role },
     );
+  }
+
+  // GET MY ORGANIZATION ROLE
+  async myOrganizationRole(
+    userId: string,
+    organizationId: string,
+  ): Promise<string> {
+
+    const organizationRole = await this.organizationMembershipService.getUserRole(userId, organizationId)
+
+    if (!organizationRole) {
+      throw new NotFoundException('User is not a member of this organizationId');
+    }
+
+    return organizationRole;
   }
 
 }

@@ -43,10 +43,4 @@ export class UpdateProjectDto {
   @IsEnum(ProjectStatus)
   status?: ProjectStatus;
 
-  @IsMongoId()
-  creatorUserId?: string;
-
-  @IsMongoId()
-  organizationId?: string;
-
 }

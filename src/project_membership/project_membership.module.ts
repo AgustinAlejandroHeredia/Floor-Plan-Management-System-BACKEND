@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ProjectMembershipService } from './project_membership.service';
 import { MongooseModule } from '@nestjs/mongoose/dist/mongoose.module';
 import { ProjectMembership, ProjectMembershipSchema } from './schemas/project_membership.schema';
@@ -10,8 +10,8 @@ import { ProjectModule } from 'src/project/project.module';
     MongooseModule.forFeature([
       { name: ProjectMembership.name, schema: ProjectMembershipSchema },
     ]),
+    forwardRef(() => ProjectModule),
     OrganizationMembershipModule,
-    ProjectModule,
   ],
   providers: [ProjectMembershipService],
   exports: [ProjectMembershipService],

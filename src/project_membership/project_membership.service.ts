@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, forwardRef, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
@@ -21,19 +21,19 @@ export class ProjectMembershipService {
     private readonly membershipModel: Model<ProjectMembershipDocument>,
 
     private readonly organizationMembershipService: OrganizationMembershipService,
+    
+    @Inject(forwardRef(() => ProjectService))
     private readonly projectService: ProjectService, // para obtener orgId
   ) {}
 
   // CREATE
-  async create(createDto: CreateProjectMembershipDto): Promise<ProjectMembership> {
+  async create(createDto: CreateProjectMembershipDto & { organizationId: string }): Promise<ProjectMembership> {
     try {
-      // 1. Obtener el proyecto
-      const project = await this.projectService.findById(createDto.projectId);
 
-      // 2. Validar que el usuario pertenece a la organización del proyecto
+      // Validar que el usuario pertenece a la organización
       const isMember = await this.organizationMembershipService.exists(
         createDto.userId,
-        project.organizationId.toString(),
+        createDto.organizationId,
       );
 
       if (!isMember) {
@@ -50,7 +50,6 @@ export class ProjectMembershipService {
       });
 
       return await created.save();
-
     } catch (error) {
       if (error.code === 11000) {
         throw new BadRequestException('User is already a member of this project');

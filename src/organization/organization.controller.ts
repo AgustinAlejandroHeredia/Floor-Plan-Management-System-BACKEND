@@ -7,6 +7,7 @@ import {
   Delete,
   UseGuards,
   Patch,
+  Req,
 } from '@nestjs/common';
 
 import { OrganizationService } from './organization.service';
@@ -22,6 +23,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
+import { OrganizationRole } from 'src/common/role.enum';
 
 @ApiTags('Organizations')
 @ApiBearerAuth('access-token')
@@ -48,8 +50,11 @@ export class OrganizationController {
       },
     },
   })
-  create(@Body() dto: CreateOrganizationDto) {
-    return this.organizationService.create(dto);
+  create(
+    @Req() req,
+    @Body() dto: CreateOrganizationDto,
+  ) {
+    return this.organizationService.create(dto, req.user.internalId);
   }
 
   // GET ALL
@@ -95,4 +100,41 @@ export class OrganizationController {
     return this.organizationService.remove(id);
   }
 
+  // ADD USER TO ORGANIZATION
+  @Post('addUser/:organizationId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Adds user to this organization' })
+  @ApiParam({ name: 'userId', type: String })
+  @ApiParam({ name: 'organizationId', type: String })
+  @ApiResponse({ status: 200, description: 'User added successfully' })
+  addUser(
+    @Param('userId') userId: string,
+    @Param('organizationId') organizationId: string,
+  ){
+    return this.organizationService.addUserToOrganization(organizationId, userId)
+  }
+
+  // GET MY ORGANIZATIONS
+  @Get('me/organizations')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get all my organizations' })
+  @ApiResponse({ status: 200, description: 'All my organizations obtained successfully' })
+  getMyOrganizations(
+    @Req() req,
+  ){
+    return this.organizationService.getMyOrganizations(req.user.internalId)
+  }
+
+  // GET MY ORGANIZATION ROLE
+  @Get('me/role/:organizationId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get my role with organization id' })
+  @ApiParam({ name: 'organizationId', type: String })
+  @ApiResponse({ status: 200, description: 'Role obtained successfully' })
+  myProjectRole(
+    @Req() req,
+    @Param('organizationId') organizationId: string,
+  ){
+    return this.organizationService.myOrganizationRole(req.user.internalId, organizationId)
+  }
 }

@@ -1,26 +1,157 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { Project, ProjectDocument } from './schemas/project.schema';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
-import { Model, Types } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
-import { Project, ProjectDocument } from './schemas/project.schema';
+import { ProjectMembershipService } from 'src/project_membership/project_membership.service';
+import { ProjectRole } from 'src/common/role.enum';
 
 @Injectable()
 export class ProjectService {
 
+
   constructor(
-    @InjectModel(Project.name)
-    private readonly projectModel: Model<ProjectDocument>,
+    @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
+    @Inject(forwardRef(() => ProjectMembershipService))
+    private readonly projectMembershipService: ProjectMembershipService,
   ) {}
 
-  create(createProjectDto: CreateProjectDto) {
-    return 'This action adds a new project';
+
+  // CREATE
+  async create(
+    dto: CreateProjectDto,
+    userId: string,
+    organizationId: string,
+  ): Promise<Project> {
+
+    // Crear el proyecto
+    const createdProject = new this.projectModel({
+      ...dto,
+      creatorUserId: new Types.ObjectId(userId),
+      organizationId: new Types.ObjectId(organizationId),
+    });
+
+    const savedProject = await createdProject.save();
+
+    // Crear el ProjectMembership para el usuario que creó el proyecto
+    try {
+
+      await this.projectMembershipService.create({
+        userId: userId,
+        projectId: savedProject._id.toString(),
+        projectRole: ProjectRole.CREATOR, // Se asigna como creador al que lo crea
+        organizationId, // Para check
+      });
+    } catch (error) {
+
+      // rollback
+      await this.remove(savedProject._id.toString())
+
+      throw new InternalServerErrorException('Error creating project membership for the creator');
+    }
+
+    return savedProject;
   }
 
-  findAll() {
-    return `This action returns all project`;
+
+  // GET ALL
+  async findAll(): Promise<Project[]> {
+    return this.projectModel.find().populate('creatorUserId organizationId').exec();
   }
 
+
+  // GET ONE
+  async findOne(id: string): Promise<Project> {
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('Project not found');
+    const project = await this.projectModel.findById(id).populate('creatorUserId organizationId');
+    if (!project) throw new NotFoundException('Project not found');
+    return project;
+  }
+
+  // UPDATE
+  async update(id: string, dto: UpdateProjectDto): Promise<Project> {
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('Project not found');
+    const updated = await this.projectModel.findByIdAndUpdate(id, dto, { new: true }).populate('creatorUserId organizationId');
+    if (!updated) throw new NotFoundException('Project not found');
+    return updated;
+  }
+
+
+  // DELETE
+  async remove(id: string): Promise<{ deleted: boolean }> {
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('Project not found');
+    const result = await this.projectModel.findByIdAndDelete(id);
+    if (!result) throw new NotFoundException('Project not found');
+    return { deleted: true };
+  }
+
+
+  // ADD USER TO PROJECT
+  async addUser(userId: string, projectId: string): Promise<boolean> {
+    try {
+
+      const project = await this.findOne(projectId)
+
+      await this.projectMembershipService.create({
+        userId,
+        projectId,
+        projectRole: ProjectRole.VIEWER,
+        organizationId: project.organizationId.toString()
+      });
+      return true;
+    } catch (error) {
+      if (error instanceof BadRequestException && error.message.includes('User already a member')) {
+        return false;
+      }
+      throw new InternalServerErrorException('Error when adding user');
+    }
+  }
+
+
+  // MY PROJECTs BY oganizationId
+  async projectsByUserAndOrganization(
+    organizationId: string,
+    userId: string,
+  ): Promise<Project[]> {
+    // Obtener todas las memberships del usuario
+    const memberships = await this.projectMembershipService.findByUserId(userId);
+
+    // Extraer solo los projectId
+    const projectIds = memberships.map(m => m.projectId);
+
+    if (projectIds.length === 0) return []; // Si no tiene memberships, retorno vacío
+
+    // Buscar proyectos de esos IDs que además pertenezcan a la organización
+    const projects = await this.projectModel
+      .find({
+        _id: { $in: projectIds },
+        organizationId: new Types.ObjectId(organizationId),
+      })
+      .exec();
+
+    return projects;
+  }
+
+
+  // GET MY PROJECT ROLE
+  async myProjectRole(
+    userId: string,
+    projectId: string,
+  ): Promise<string> {
+
+    const projectRole = await this.projectMembershipService.getUserRole(userId, projectId)
+
+    if (!projectRole) {
+      throw new NotFoundException('User is not a member of this project');
+    }
+
+    return projectRole;
+  }
+
+  
+  /*
+  // USED BEFORE ON project.membership.service.ts LINE 31
   async findById(projectId: string) {
     const project = await this.projectModel
       .findById(new Types.ObjectId(projectId))
@@ -32,16 +163,5 @@ export class ProjectService {
 
     return project;
   }
-
-  findOne(id: number) {
-    return `This action returns a #${id} project`;
-  }
-
-  update(id: number, updateProjectDto: UpdateProjectDto) {
-    return `This action updates a #${id} project`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} project`;
-  }
+  */
 }

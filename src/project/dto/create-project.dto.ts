@@ -29,7 +29,7 @@ export class CreateProjectDto {
   owner: string;
 
   @IsString()
-  tecnicalDirection: string;
+  technicalDirection: string;
 
   @IsEnum(ProjectStatus)
   status: ProjectStatus;
