@@ -9,7 +9,6 @@ import { UpdateOrganizationMembershipDto } from './dto/update-organization_membe
 // SCHEMAs
 import { OrganizationMembership, OrganizationMembershipDocument } from './schemas/organization_membership.schema';
 
-
 @Injectable()
 export class OrganizationMembershipService {
 
@@ -19,7 +18,7 @@ export class OrganizationMembershipService {
   ) {}
 
   // CREATE
-  async create(createDto: CreateOrganizationMembershipDto): Promise<OrganizationMembership> {
+  async create(createDto: CreateOrganizationMembershipDto): Promise<OrganizationMembershipDocument> {
     try {
       const created = new this.membershipModel({
         ...createDto,
@@ -38,14 +37,14 @@ export class OrganizationMembershipService {
   }
 
   // GET BY ORGANIZATION ID
-  async findByOrganizationId(organizationId: string): Promise<OrganizationMembership[]> {
+  async findByOrganizationId(organizationId: string): Promise<OrganizationMembershipDocument[]> {
     return this.membershipModel.find({
       organizationId: new Types.ObjectId(organizationId),
     });
   }
 
   // GET BY USER ID
-  async findByUserId(userId: string): Promise<OrganizationMembership[]> {
+  async findByUserId(userId: string): Promise<OrganizationMembershipDocument[]> {
     return this.membershipModel.find({
       userId: new Types.ObjectId(userId),
     });
@@ -55,7 +54,7 @@ export class OrganizationMembershipService {
   async updateRole(
     membershipId: string,
     updateDto: UpdateOrganizationMembershipDto,
-  ): Promise<OrganizationMembership> {
+  ): Promise<OrganizationMembershipDocument> {
 
     const updated = await this.membershipModel.findByIdAndUpdate(
       membershipId,

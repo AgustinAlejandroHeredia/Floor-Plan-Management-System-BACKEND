@@ -1,21 +1,30 @@
-import { IsMongoId, IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, Length, IsEmail } from 'class-validator';
 
 export class UpdateOrganizationDto {
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @Length(2, 100)
   name?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @Length(5, 200)
   address?: string;
 
-  @IsString()
   @IsOptional()
-  contact?: string;
+  @IsEmail()
+  @Length(5, 100)
+  contactEmail?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @Length(6, 20)
+  contactPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(3, 50)
   record?: string;
 
 }

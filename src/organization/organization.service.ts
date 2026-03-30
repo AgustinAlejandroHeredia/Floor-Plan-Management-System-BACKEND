@@ -1,26 +1,201 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+
+// DTOs
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 
+// SCHEMA
+import { Organization, OrganizationDocument } from './schemas/organization.schema';
+
+// RELATIONS
+import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
+import { OrganizationMembership } from 'src/organization_membership/schemas/organization_membership.schema';
+import { OrganizationRole } from 'src/common/role.enum';
+
 @Injectable()
 export class OrganizationService {
-  create(createOrganizationDto: CreateOrganizationDto) {
-    return 'This action adds a new organization';
+
+  constructor(
+    @InjectModel(Organization.name)
+    private readonly organizationModel: Model<OrganizationDocument>,
+    private readonly organizationMembershipService: OrganizationMembershipService,
+  ) {}
+
+  // CREATE
+  async create(createDto: CreateOrganizationDto): Promise<Organization> {
+    try {
+      const created = new this.organizationModel(createDto);
+      return await created.save();
+    } catch (error) {
+      if (error.code === 11000) {
+        throw new BadRequestException('Organization with provided unique field (name, email or phone number) already exists');
+      }
+      throw error;
+    }
   }
 
-  findAll() {
-    return `This action returns all organization`;
+  // GET ALL
+  async findAll(): Promise<Organization[]> {
+    return this.organizationModel.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} organization`;
+  // GET ONE
+  async findOne(id: string): Promise<Organization> {
+    const organization = await this.organizationModel.findById(
+      new Types.ObjectId(id),
+    );
+
+    if (!organization) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    return organization;
   }
 
-  update(id: number, updateOrganizationDto: UpdateOrganizationDto) {
-    return `This action updates a #${id} organization`;
+  // UPDATE
+  async update(
+    id: string,
+    updateDto: UpdateOrganizationDto,
+  ): Promise<OrganizationDocument> {
+    const { name, contactEmail, contactPhone } = updateDto;
+
+    // Verificar nombre único
+    if (name) {
+      const exists = await this.organizationModel.findOne({ 
+        name, 
+        _id: { $ne: id }  // Excluye la organización actual
+      });
+      if (exists) {
+        throw new BadRequestException('Organization name already exists');
+      }
+    }
+
+    // Verificar email único
+    if (contactEmail) {
+      const exists = await this.organizationModel.findOne({ 
+        contactEmail, 
+        _id: { $ne: id } 
+      });
+      if (exists) {
+        throw new BadRequestException('Organization email already exists');
+      }
+    }
+
+    // Verificar teléfono único
+    if (contactPhone) {
+      const exists = await this.organizationModel.findOne({ 
+        contactPhone, 
+        _id: { $ne: id } 
+      });
+      if (exists) {
+        throw new BadRequestException('Organization phone already exists');
+      }
+    }
+
+    // Actualizar con validadores de Mongoose
+    try {
+      const updated = await this.organizationModel.findByIdAndUpdate(
+        new Types.ObjectId(id),
+        updateDto,
+        { new: true, runValidators: true }, // runValidators asegura que se respeten los decorators de DTO
+      );
+
+      if (!updated) {
+        throw new NotFoundException('Organization not found');
+      }
+
+      return updated;
+    } catch (error) {
+      // Capturar errores de índice único que puedan saltar por alguna razón
+      if (error.code === 11000) {
+        throw new BadRequestException('Duplicate value for a unique field');
+      }
+      throw error;
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} organization`;
+  // DELETE
+  async remove(id: string): Promise<void> {
+    const result = await this.organizationModel.findByIdAndDelete(
+      new Types.ObjectId(id),
+    );
+
+    if (!result) {
+      throw new NotFoundException('Organization not found');
+    }
   }
+
+  // GET MY ORGANIZATIONS
+  async getMyOrganizations(userId: string): Promise<Organization[]> {
+
+    const memberships = await this.organizationMembershipService.findByUserId(userId);
+
+    const organizationIds = memberships.map(m => m.organizationId);
+
+    return this.organizationModel.find({
+      _id: { $in: organizationIds },
+    });
+  }
+
+
+  // ADD USER TO ORGANIZATION
+  async addUserToOrganization(
+    organizationId: string,
+    userId: string,
+    role: OrganizationRole,
+  ): Promise<OrganizationMembership> {
+
+    // verificar que la org exista
+    await this.findOne(organizationId);
+
+    return this.organizationMembershipService.create({
+      userId,
+      organizationId,
+      organizationRole: role,
+    });
+  }
+
+
+  // REMOVE USER FROM ORGANIZATION
+  async removeUserFromOrganization(
+    organizationId: string,
+    userId: string,
+  ): Promise<void> {
+
+    // verificar que la org exista
+    await this.findOne(organizationId);
+
+    await this.organizationMembershipService.deleteByUserAndOrganization(
+      userId,
+      organizationId,
+    );
+  }
+
+
+  // CHANGE USER ROLE
+  async changeUserRole(
+    organizationId: string,
+    userId: string,
+    role: OrganizationRole,
+  ): Promise<OrganizationMembership> {
+
+    // verificar que exista la membership
+    const memberships = await this.organizationMembershipService.findByUserId(userId);
+
+    const membership = memberships.find(
+      m => m.organizationId.toString() === organizationId,
+    );
+
+    if (!membership) {
+      throw new NotFoundException('Membership not found');
+    }
+
+    return this.organizationMembershipService.updateRole(
+      membership._id.toString(),
+      { organizationRole: role },
+    );
+  }
+
 }
