@@ -172,6 +172,16 @@ export class ProjectService {
   }
 
 
+  // ALL PROJECTS BY organizationId
+  async getAllProjectsByOrganizationId(organizationId: string): Promise<ProjectDocument[]> {
+    const projects = this.projectModel.find({
+      organizationId: new Types.ObjectId(organizationId)
+    })
+    console.log("PROJECTS with organizationId ", organizationId, ": ", projects)
+    return projects
+  }
+
+
   // GET MY PROJECT ROLE
   async myProjectRole(
     userId: string,

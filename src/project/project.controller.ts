@@ -149,6 +149,17 @@ export class ProjectController {
     return this.projectService.projectsByUserAndOrganization(organizationId, req.user.internalId)
   }
 
+  @Get('organizationProjects/:organizationId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get all the projects for this organizationId' })
+  @ApiParam({ name: 'organizationId', type: String })
+  @ApiResponse({ status: 200, description: 'All projects obtained successfully' })
+  getAllProjectsByOrganizationId(
+    @Param('organizationId') organizationId: string,
+  ){
+    return this.projectService.getAllProjectsByOrganizationId(organizationId)
+  }
+
   // GET MY PROJECT ROLE
   @Get('me/role/:projectId')
   @UseGuards(JwtAuthGuard)
