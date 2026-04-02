@@ -37,6 +37,7 @@ export class BlueprintService {
         organizationId: new Types.ObjectId(dto.organizationId),
         uploadedBy: new Types.ObjectId(userId),
         storageId: uploaded.id,
+        filename: uploaded.name,
         encoding: file.encoding,
         mimetype: file.mimetype,
         size: file.size,
@@ -76,7 +77,7 @@ export class BlueprintService {
   */
   async findByProject(projectId: string) {
     const blueprints = await this.blueprintModel
-      .find({ projectId })
+      .find({ projectId: new Types.ObjectId(projectId) })
       .lean();
 
     return Promise.all(

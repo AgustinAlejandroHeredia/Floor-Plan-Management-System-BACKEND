@@ -3,7 +3,7 @@ import { IsArray, IsMongoId, IsNumber, IsString } from 'class-validator';
 export class CreateBlueprintDto {
 
   @IsString()
-  filename: string;
+  blueprintName: string;
 
   @IsMongoId()
   projectId: string;

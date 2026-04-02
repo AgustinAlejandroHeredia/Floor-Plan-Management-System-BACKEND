@@ -7,6 +7,9 @@ export type BlueprintDocument = Blueprint & Document;
 export class Blueprint {
 
     @Prop({ required: true, type: String })
+    blueprintName: string
+
+    @Prop({ required: true, type: String })
     filename: string
 
     @Prop({ required: true, type: Types.ObjectId, ref: 'Project', index: true })

@@ -38,7 +38,7 @@ export class BackblazeService implements FileStorageService {
     try {
       const auth = await this.authorize();
 
-      const validDuration = 60;
+      const validDuration = 180; // time of authorization (3 min)
 
       const res = await axios.post(
         `${auth.apiUrl}/b2api/v2/b2_get_download_authorization`,

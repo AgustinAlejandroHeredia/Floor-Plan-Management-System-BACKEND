@@ -51,13 +51,13 @@ export class BlueprintController {
   @ApiBody({
     schema: {
       type: 'object',
-      required: ['file', 'filename', 'projectId', 'organizationId'],
+      required: ['file', 'blueprintName', 'projectId', 'organizationId'],
       properties: {
         file: {
           type: 'string',
           format: 'binary',
         },
-        filename: { type: 'string' },
+        blueprintName: { type: 'string' },
         projectId: { type: 'string' },
         organizationId: { type: 'string' },
         tags: {

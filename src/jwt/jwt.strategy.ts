@@ -38,6 +38,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     console.log("---------- FROM VALIDATE TO CHECK PAYLOAD ----------")
     console.log("PAYLOAD RAW : ", payload)
     console.log("PAYLOAD .sub : ", payload.sub)
+    console.log("----------------------------------------------------")
 
     const authHeader = req.headers.authorization;
 
