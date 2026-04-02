@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Blueprint, BlueprintDocument } from './schemas/blueprint.schema';
 import { CreateBlueprintDto } from './dto/create-blueprint.dto';
 import { UpdateBlueprintDto } from './dto/update-blueprint.dto';
@@ -33,8 +33,10 @@ export class BlueprintService {
     try {
       const blueprint = new this.blueprintModel({
         ...dto,
+        projectId: new Types.ObjectId(dto.projectId),
+        organizationId: new Types.ObjectId(dto.organizationId),
+        uploadedBy: new Types.ObjectId(userId),
         storageId: uploaded.id,
-        uploadedBy: userId,
         encoding: file.encoding,
         mimetype: file.mimetype,
         size: file.size,
@@ -42,7 +44,7 @@ export class BlueprintService {
 
       return await blueprint.save();
     } catch (error) {
-      // rollback
+      console.log("ERROR : ", error)
       await this.storageService.deleteFile(uploaded.id);
       throw new InternalServerErrorException('Error creando blueprint');
     }
@@ -67,8 +69,24 @@ export class BlueprintService {
   }
 
   // GET by project
+  /*
   async findByProject(projectId: string) {
     return this.blueprintModel.find({ projectId }).lean();
+  }
+  */
+  async findByProject(projectId: string) {
+    const blueprints = await this.blueprintModel
+      .find({ projectId })
+      .lean();
+
+    return Promise.all(
+      blueprints.map(async (bp) => ({
+        ...bp,
+        downloadUrl: await this.storageService.getSignedDownloadUrl(
+          bp.filename
+        ),
+      }))
+    );
   }
 
   // GET by user

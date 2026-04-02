@@ -161,4 +161,44 @@ export class UserService {
     return user;
   }
 
+  
+  async getOrCreateUserFromPayload(payload: any, token: string): Promise<UserDocument> {
+    const authProviderId = payload.sub;
+
+    let user = await this.userModel.findOne({ authProviderId });
+
+    if (user) {
+      console.log("USER ALREDY EXISTS ON DATABASE")
+      return user;
+    }
+
+    const authUser = await this.authService.getUserInfo(token);
+
+    console.log("CREATING USER...")
+
+    user = await this.userModel.findOneAndUpdate(
+      { authProviderId },
+      {
+        $setOnInsert: {
+          authProviderId,
+          email: authUser.email,
+          name: authUser.name,
+          picture: authUser.picture,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+      }
+    );
+
+    if(!user) {
+      throw new Error('User could not be created')
+    }
+
+    console.log("USER CREATED SUCCESSFULLY : ", user)
+
+    return user;
+  }
+
 }

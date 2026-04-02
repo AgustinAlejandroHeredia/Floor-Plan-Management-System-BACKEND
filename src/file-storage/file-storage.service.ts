@@ -16,4 +16,8 @@ export abstract class FileStorageService {
   abstract getDownloadUrl(fileId: string): Promise<string>;
 
   abstract deleteFile(fileId: string): Promise<void>;
+
+  abstract getDownloadUrlByName(fileName: string): string;
+
+  abstract getSignedDownloadUrl(filename: string): Promise<string>;
 }

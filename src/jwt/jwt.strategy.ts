@@ -35,6 +35,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(req: any, payload: any) {
 
+    console.log("---------- FROM VALIDATE TO CHECK PAYLOAD ----------")
+    console.log("PAYLOAD RAW : ", payload)
+    console.log("PAYLOAD .sub : ", payload.sub)
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
@@ -43,7 +47,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const token = authHeader.split(' ')[1];
 
-    const user = await this.userService.getOrCreateUserFromToken(token);
+    const user = await this.userService.getOrCreateUserFromPayload(payload, token);
 
     return {
       internalId: user._id.toString(),
