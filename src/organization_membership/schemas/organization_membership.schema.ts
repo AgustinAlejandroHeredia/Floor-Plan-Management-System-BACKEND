@@ -33,4 +33,4 @@ OrganizationMembershipSchema.index(
 
 // OPTIONAL INDEXES
 OrganizationMembershipSchema.index({ userId: 1 });
-OrganizationMembershipSchema.index({ projectId: 1 });
+OrganizationMembershipSchema.index({ organizationId: 1 });

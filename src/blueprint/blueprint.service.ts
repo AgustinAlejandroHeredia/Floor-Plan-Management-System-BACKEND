@@ -78,6 +78,7 @@ export class BlueprintService {
   async findByProject(projectId: string) {
     const blueprints = await this.blueprintModel
       .find({ projectId: new Types.ObjectId(projectId) })
+      .sort({ creationDate: -1 }) // order by date
       .lean();
 
     return Promise.all(
@@ -123,5 +124,26 @@ export class BlueprintService {
     await this.blueprintModel.findByIdAndDelete(id);
 
     return { message: 'Blueprint eliminado correctamente' };
+  }
+
+  async getOldestBlueprintUrl(projectId: string) {
+    const blueprint = await this.blueprintModel
+      .findOne({ projectId: new Types.ObjectId(projectId) })
+      .sort({ creationDate: 1 })
+      .lean();
+
+    if (!blueprint) {
+      throw new NotFoundException(
+        `No blueprints found for project ${projectId}`
+      );
+    }
+
+    const downloadUrl = await this.storageService.getSignedDownloadUrl(
+      blueprint.filename
+    );
+
+    return {
+      downloadUrl,
+    };
   }
 }

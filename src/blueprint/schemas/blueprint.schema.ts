@@ -30,7 +30,7 @@ export class Blueprint {
     @Prop({ required: true, type: Number })
     size: number
 
-    @Prop({ required: true, type: Date, default: Date.now })
+    @Prop({ required: true, type: Date, default: Date.now, index: true})
     creationDate: Date
 
     @Prop({ required: true, type: [String] })

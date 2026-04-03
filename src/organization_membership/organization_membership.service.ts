@@ -8,6 +8,7 @@ import { UpdateOrganizationMembershipDto } from './dto/update-organization_membe
 
 // SCHEMAs
 import { OrganizationMembership, OrganizationMembershipDocument } from './schemas/organization_membership.schema';
+import { UserDocument } from 'src/user/schemas/user.schema';
 
 @Injectable()
 export class OrganizationMembershipService {
@@ -137,6 +138,22 @@ export class OrganizationMembershipService {
     }
 
     return membership.organizationRole;
+  }
+
+  async findUsersByOrganization(
+    organizationId: string,
+  ): Promise<{ user: UserDocument; organizationRole: string }[]> {
+
+    const memberships = await this.membershipModel
+      .find({
+        organizationId: new Types.ObjectId(organizationId),
+      })
+      .populate<{ userId: UserDocument }>('userId');
+
+    return memberships.map((membership) => ({
+      user: membership.userId,
+      organizationRole: membership.organizationRole,
+    }));
   }
 
 }

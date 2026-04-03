@@ -140,4 +140,16 @@ export class BlueprintController {
   remove(@Param('id') id: string) {
     return this.blueprintService.remove(id);
   }
+
+  // GET OLDEST BLUEPRINT
+  @Get('/oldestBlueprintUrl/:projectId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get oldest blueprint created' })
+  @ApiParam({ name: 'projectId', type: String })
+  @ApiResponse({ status: 200, description: 'Blueprint file url obtained successfully' })
+  getOldestBlueprintUrl(
+    @Param('projectId') projectId,
+  ){
+    return this.blueprintService.getOldestBlueprintUrl(projectId)
+  }
 }

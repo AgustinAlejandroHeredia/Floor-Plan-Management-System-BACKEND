@@ -67,6 +67,18 @@ export class OrganizationController {
     return this.organizationService.findAll();
   }
 
+  // GET ALL ORGANIZATION MEMBERS 
+  @Get('/allMembers/admin/:organizationId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get all members for the organization as admin' })
+  @ApiParam({ name: 'organizationId', type: String })
+  @ApiResponse({ status: 200, description: 'Organization member list obtained successfully' })
+  getOrganizationMemberListAsAdmin(
+    @Param('organizationId') organizationId: string,
+  ){
+    return this.organizationService.getOrganizationMemberListAsAdmin(organizationId)
+  }
+
   // GET ONE
   @Get(':id')
   @UseGuards(JwtAuthGuard)

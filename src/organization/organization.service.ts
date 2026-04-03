@@ -8,6 +8,7 @@ import { UpdateOrganizationDto } from './dto/update-organization.dto';
 
 // SCHEMA
 import { Organization, OrganizationDocument } from './schemas/organization.schema';
+import { User } from 'src/user/schemas/user.schema';
 
 // RELATIONS
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
@@ -64,6 +65,25 @@ export class OrganizationService {
   // GET ALL
   async findAll(): Promise<Organization[]> {
     return this.organizationModel.find();
+  }
+
+  // GET ALL MEMBERS OF THE ORGANIZATION AS ADMIN
+  async getOrganizationMemberListAsAdmin(
+    organizationId: string,
+  ) {
+    const members = await this.organizationMembershipService.findUsersByOrganization(
+      organizationId,
+    );
+
+    return members
+      .sort((a, b) => a.user.name.localeCompare(b.user.name))
+      .map(({ user, organizationRole }) => ({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        picture: user.picture,
+        organizationRole: organizationRole.charAt(0).toLocaleUpperCase() + organizationRole.slice(1)
+      }));
   }
 
   // GET ONE
