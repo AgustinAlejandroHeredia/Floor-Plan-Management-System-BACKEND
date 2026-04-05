@@ -20,13 +20,13 @@ export class Project {
     @Prop({ required: true, type: String, trim: true, maxlength: 50 })
     scale: string
 
-    @Prop({ required: true, type: String, trim: true })
+    @Prop({ required: true, type: String, trim: true, maxlength: 100 })
     others: string
 
-    @Prop({ required: true, type: String, trim: true })
+    @Prop({ required: true, type: String, trim: true, maxlength: 100 })
     references: string
 
-    @Prop({ required: true, type: String, trim: true })
+    @Prop({ required: true, type: String, trim: true, maxlength: 100 })
     background: string
 
     @Prop({ required: true, type: String, trim: true, maxlength: 100 })

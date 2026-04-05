@@ -31,12 +31,6 @@ export class CreateProjectDto {
   @IsString()
   technicalDirection: string;
 
-  @IsEnum(ProjectStatus)
-  status: ProjectStatus;
-
-  @IsMongoId()
-  creatorUserId: string;
-
   @IsMongoId()
   organizationId: string;
 

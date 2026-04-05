@@ -6,6 +6,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ProjectMembershipService } from 'src/project_membership/project_membership.service';
 import { ProjectRole } from 'src/common/role.enum';
+import { ProjectStatus } from 'src/common/status.enum';
 
 @Injectable()
 export class ProjectService {
@@ -28,6 +29,7 @@ export class ProjectService {
     // Crear el proyecto
     const createdProject = new this.projectModel({
       ...dto,
+      status: ProjectStatus.PENDING,
       creatorUserId: new Types.ObjectId(userId),
       organizationId: new Types.ObjectId(organizationId),
     });

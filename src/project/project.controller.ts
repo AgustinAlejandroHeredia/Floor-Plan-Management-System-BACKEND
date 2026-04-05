@@ -44,8 +44,8 @@ export class ProjectController {
       type: 'object',
       required: [
         'projectName', 'record', 'address', 'scale', 'others',
-        'references', 'background', 'owner', 'technicalDirection',
-        'status', 'creatorUserId', 'organizationId'
+        'references', 'background', 'owner', 'technicalDirection', 
+        'creatorUserId', 'organizationId'
       ],
       properties: {
         projectName: { type: 'string', example: 'My Project' },
@@ -57,7 +57,6 @@ export class ProjectController {
         background: { type: 'string', example: 'Project background' },
         owner: { type: 'string', example: 'John Doe' },
         technicalDirection: { type: 'string', example: 'Jane Smith' },
-        status: { type: 'string', enum: ['pending', 'canceled', 'approved'], example: 'pending' },
         organizationId: { type: 'string', example: '69cab08769c8cf094ae3c3c5' }
       },
     },
