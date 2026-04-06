@@ -86,17 +86,8 @@ export class BlueprintController {
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({ status: 200, description: 'Blueprint obtained' })
   @ApiResponse({ status: 404, description: 'Not Found' })
-  async getOne(@Param('id') id: string, @Res() res: Response) {
-    const blueprint = await this.blueprintService.findOne(id);
-
-    const file = blueprint.file;
-
-    res.set({
-      'Content-Type': file.contentType,
-      'Content-Disposition': `attachment; filename="${file.name}"`,
-    });
-
-    res.send(file.buffer);
+  async getOne(@Param('id') id: string) {
+    return this.blueprintService.findOne(id);
   }
 
   // GET by project
@@ -152,4 +143,17 @@ export class BlueprintController {
   ){
     return this.blueprintService.getOldestBlueprintUrl(projectId)
   }
+
+  // GET BLUEPRINT DOWNLOAD URL ONLY
+  @Get('/blueprintDownloadUrl/:blueprintId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get file download url only' })
+  @ApiParam({ name: 'blueprintId', type: String })
+  @ApiResponse({ status: 200, description: 'Blueprint file url obtained successfully' })
+  getBlueprintDownloadUrlOnly(
+    @Param('blueprintId') blueprintId,
+  ){
+    return this.blueprintService.getBlueprintDownloadUrlOnly(blueprintId)
+  }
+
 }

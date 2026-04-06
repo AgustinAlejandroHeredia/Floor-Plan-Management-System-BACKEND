@@ -59,13 +59,13 @@ export class BlueprintService {
       throw new NotFoundException('Blueprint no encontrado');
     }
 
-    const file = await this.storageService.getFileById(
-      blueprint.storageId,
+    const downloadUrl = await this.storageService.getSignedDownloadUrl(
+      blueprint.filename,
     );
 
     return {
       ...blueprint,
-      file,
+      downloadUrl,
     };
   }
 
@@ -140,6 +140,21 @@ export class BlueprintService {
 
     const downloadUrl = await this.storageService.getSignedDownloadUrl(
       blueprint.filename
+    );
+
+    return {
+      downloadUrl,
+    };
+  }
+
+  async getBlueprintDownloadUrlOnly(blueprintId) {
+    const blueprint = await this.blueprintModel.findById(blueprintId).lean();
+    if (!blueprint) {
+      throw new NotFoundException('Blueprint not found');
+    }
+
+    const downloadUrl = await this.storageService.getSignedDownloadUrl(
+      blueprint.filename,
     );
 
     return {
