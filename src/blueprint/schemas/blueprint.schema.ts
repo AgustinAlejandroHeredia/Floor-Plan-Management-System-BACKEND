@@ -22,6 +22,9 @@ export class Blueprint {
     storageId: string
 
     @Prop({ required: true, type: String })
+    storageThumbnailId: string
+
+    @Prop({ required: true, type: String })
     encoding: string
 
     @Prop({ required: true, type: String })

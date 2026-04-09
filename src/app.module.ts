@@ -4,15 +4,16 @@ import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from './jwt/jwt.module';
 import { UserModule } from './user/user.module';
-
-// MONGOOSE
-import { MongooseModule } from '@nestjs/mongoose';
 import { BlueprintModule } from './blueprint/blueprint.module';
 import { OrganizationModule } from './organization/organization.module';
 import { ProjectModule } from './project/project.module';
 import { InvitationModule } from './invitation/invitation.module';
 import { OrganizationMembershipModule } from './organization_membership/organization_membership.module';
 import { ProjectMembershipModule } from './project_membership/project_membership.module';
+import { ThumbnailModule } from './thumbnail/thumbnail.module';
+
+// MONGOOSE
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
@@ -43,6 +44,8 @@ import { ProjectMembershipModule } from './project_membership/project_membership
     OrganizationMembershipModule,
 
     ProjectMembershipModule,
+
+    ThumbnailModule,
     
   ],
   controllers: [AppController],

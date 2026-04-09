@@ -2,7 +2,6 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { FileStorageService, StoredFile } from '../file-storage.service';
-import * as crypto from 'crypto';
 
 @Injectable()
 export class BackblazeService implements FileStorageService {
@@ -11,7 +10,7 @@ export class BackblazeService implements FileStorageService {
   constructor(private readonly config: ConfigService) {}
 
   // --------------------------
-  // 1️⃣ Autorización con cache
+  // Autorización con cache
   // --------------------------
   private async authorize(): Promise<any> {
     if (this.authCache) return this.authCache;
@@ -34,6 +33,9 @@ export class BackblazeService implements FileStorageService {
     }
   }
 
+  // --------------------------
+  // Signed url
+  // --------------------------
   async getSignedDownloadUrl(fileName: string): Promise<string> {
     try {
       const auth = await this.authorize();
@@ -68,7 +70,7 @@ export class BackblazeService implements FileStorageService {
   }
 
   // --------------------------
-  // 2️⃣ Subir archivo
+  // Subir archivo
   // --------------------------
   async uploadFile(file: Express.Multer.File): Promise<StoredFile> {
     try {
@@ -102,99 +104,7 @@ export class BackblazeService implements FileStorageService {
   }
 
   // --------------------------
-  // 3️⃣ Obtener archivo por ID
-  // --------------------------
-  async getFileById(fileId: string): Promise<StoredFile> {
-    try {
-      const auth = await this.authorize();
-
-      const fileInfoRes = await axios.post(
-        `${auth.apiUrl}/b2api/v2/b2_get_file_info`,
-        { fileId },
-        { headers: { Authorization: auth.authorizationToken } }
-      );
-
-      const fileName = fileInfoRes.data.fileName;
-
-      // Descarga buffer
-      const downloadRes = await axios.get(
-        `${auth.downloadUrl}/file/${this.config.get(
-          'BACKBLAZE_BUCKET_NAME'
-        )}/${encodeURIComponent(fileName)}`,
-        {
-          responseType: 'arraybuffer',
-          headers: { Authorization: auth.authorizationToken }, // necesario si bucket privado
-        }
-      );
-
-      return {
-        id: fileId,
-        name: fileName,
-        buffer: Buffer.from(downloadRes.data),
-        contentType: downloadRes.headers['content-type'],
-      };
-    } catch (err: any) {
-      console.error('Get file error:', err.response?.data || err.message);
-      throw new InternalServerErrorException('Error obteniendo archivo');
-    }
-  }
-
-  // --------------------------
-  // 4️⃣ Obtener archivo por nombre
-  // --------------------------
-  async getFileByName(fileName: string): Promise<StoredFile> {
-    try {
-      const auth = await this.authorize();
-
-      const listRes = await axios.post(
-        `${auth.apiUrl}/b2api/v2/b2_list_file_names`,
-        { bucketId: this.config.get('BACKBLAZE_BUCKET_ID'), prefix: fileName, maxFileCount: 1 },
-        { headers: { Authorization: auth.authorizationToken } }
-      );
-
-      const file = listRes.data.files?.[0];
-      if (!file) throw new Error('Archivo no encontrado');
-
-      return {
-        id: file.fileId,
-        name: file.fileName,
-      };
-    } catch (err: any) {
-      console.error('Get file by name error:', err.response?.data || err.message);
-      throw new InternalServerErrorException('Error buscando archivo');
-    }
-  }
-
-  // --------------------------
-  // 5️⃣ Obtener URL de descarga
-  // --------------------------
-  async getDownloadUrl(fileId: string): Promise<string> {
-    try {
-      const auth = await this.authorize();
-
-      // 🔹 Obtener fileName desde fileId
-      const fileInfoRes = await axios.post(
-        `${auth.apiUrl}/b2api/v2/b2_get_file_info`,
-        { fileId },
-        { headers: { Authorization: auth.authorizationToken } }
-      );
-
-      const fileName = fileInfoRes.data.fileName;
-
-      // 🔹 Bucket público
-      const url = `${auth.downloadUrl}/file/${this.config.get(
-        'BACKBLAZE_BUCKET_NAME'
-      )}/${encodeURIComponent(fileName)}`;
-
-      return url;
-    } catch (err: any) {
-      console.error('Download URL error:', err.response?.data || err.message);
-      throw new InternalServerErrorException('Error generando URL de descarga');
-    }
-  }
-
-  // --------------------------
-  // 6️⃣ Eliminar archivo
+  // Eliminar archivo
   // --------------------------
   async deleteFile(fileId: string): Promise<void> {
     try {
@@ -219,13 +129,4 @@ export class BackblazeService implements FileStorageService {
     }
   }
 
-  // --------------------------
-  // 7️⃣ URL rápida usando fileName
-  // (opcional, más rápido si fileName ya lo guardaste)
-  // --------------------------
-  getDownloadUrlByName(fileName: string): string {
-    const baseUrl = this.config.get('BACKBLAZE_DOWNLOAD_URL');
-    const bucket = this.config.get('BACKBLAZE_BUCKET_NAME');
-    return `${baseUrl}/file/${bucket}/${encodeURIComponent(fileName)}`;
-  }
 }

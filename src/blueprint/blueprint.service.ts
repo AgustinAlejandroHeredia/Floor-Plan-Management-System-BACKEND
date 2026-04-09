@@ -8,7 +8,10 @@ import { Model, Types } from 'mongoose';
 import { Blueprint, BlueprintDocument } from './schemas/blueprint.schema';
 import { CreateBlueprintDto } from './dto/create-blueprint.dto';
 import { UpdateBlueprintDto } from './dto/update-blueprint.dto';
-import { FileStorageService } from 'src/file-storage/file-storage.service';
+import { FileStorageService, StoredFile } from 'src/file-storage/file-storage.service';
+import { ThumbnailService } from 'src/thumbnail/thumbnail.service';
+
+import { randomUUID } from "crypto";
 
 @Injectable()
 export class BlueprintService {
@@ -16,6 +19,7 @@ export class BlueprintService {
     @InjectModel(Blueprint.name)
     private blueprintModel: Model<BlueprintDocument>,
     private readonly storageService: FileStorageService,
+    private readonly thumbnailService: ThumbnailService,
   ) {}
 
   // CREATE (upload + mongo)
@@ -28,16 +32,39 @@ export class BlueprintService {
       throw new InternalServerErrorException('Archivo requerido');
     }
 
-    const uploaded = await this.storageService.uploadFile(file);
+    // uploads it with unique name
+    const uniqueName = `${randomUUID()}_${file.originalname}`;
+    file.originalname = uniqueName
+
+    const uploadedFile = await this.storageService.uploadFile(file);
+
+    let uploadedThumbnail: StoredFile | null = null;
 
     try {
+
+      // ---- THUMBNAIL ----
+      const thumbnailBuffer = await this.thumbnailService.createThumbnail(file.buffer)
+      const thumbnailOriginalname = this.thumbnailService.getThumbnailName(uploadedFile.name)
+
+      const thumbnailFile: Express.Multer.File = {
+        ...file,
+        buffer: thumbnailBuffer,
+        size: thumbnailBuffer.length,
+        originalname: thumbnailOriginalname,
+        mimetype: "image/jpeg"
+      }
+
+      uploadedThumbnail = await this.storageService.uploadFile(thumbnailFile)
+
+      // ---- BLUEPRINT ----
       const blueprint = new this.blueprintModel({
         ...dto,
         projectId: new Types.ObjectId(dto.projectId),
         organizationId: new Types.ObjectId(dto.organizationId),
         uploadedBy: new Types.ObjectId(userId),
-        storageId: uploaded.id,
-        filename: uploaded.name,
+        storageId: uploadedFile.id,
+        storageThumbnailId: uploadedThumbnail.id,
+        filename: uploadedFile.name,
         encoding: file.encoding,
         mimetype: file.mimetype,
         size: file.size,
@@ -46,7 +73,13 @@ export class BlueprintService {
       return await blueprint.save();
     } catch (error) {
       console.log("ERROR : ", error)
-      await this.storageService.deleteFile(uploaded.id);
+      // rollback
+      if(uploadedFile){
+        await this.storageService.deleteFile(uploadedFile.id);
+      }
+      if(uploadedThumbnail){
+        await this.storageService.deleteFile(uploadedThumbnail.id)
+      }
       throw new InternalServerErrorException('Error creando blueprint');
     }
   }
@@ -69,13 +102,8 @@ export class BlueprintService {
     };
   }
 
-  // GET by project
-  /*
-  async findByProject(projectId: string) {
-    return this.blueprintModel.find({ projectId }).lean();
-  }
-  */
-  async findByProject(projectId: string) {
+  // GET all thumbnails by project
+  async findThumbnailsByProject(projectId: string) {
     const blueprints = await this.blueprintModel
       .find({ projectId: new Types.ObjectId(projectId) })
       .sort({ creationDate: -1 }) // order by date
@@ -85,7 +113,7 @@ export class BlueprintService {
       blueprints.map(async (bp) => ({
         ...bp,
         downloadUrl: await this.storageService.getSignedDownloadUrl(
-          bp.filename
+          this.thumbnailService.getThumbnailName(bp.filename)
         ),
       }))
     );
@@ -119,14 +147,19 @@ export class BlueprintService {
       throw new NotFoundException('Blueprint no encontrado');
     }
 
+    // original file
     await this.storageService.deleteFile(blueprint.storageId);
 
+    // thumbnail
+    await this.storageService.deleteFile(blueprint.storageThumbnailId)
+
+    // db reg
     await this.blueprintModel.findByIdAndDelete(id);
 
     return { message: 'Blueprint eliminado correctamente' };
   }
 
-  async getOldestBlueprintUrl(projectId: string) {
+  async getOldestBlueprintThumbnailUrl(projectId: string) {
     const blueprint = await this.blueprintModel
       .findOne({ projectId: new Types.ObjectId(projectId) })
       .sort({ creationDate: 1 })
@@ -139,7 +172,7 @@ export class BlueprintService {
     }
 
     const downloadUrl = await this.storageService.getSignedDownloadUrl(
-      blueprint.filename
+      this.thumbnailService.getThumbnailName(blueprint.filename)
     );
 
     return {

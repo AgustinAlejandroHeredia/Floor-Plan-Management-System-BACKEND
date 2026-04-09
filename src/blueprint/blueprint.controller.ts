@@ -90,14 +90,14 @@ export class BlueprintController {
     return this.blueprintService.findOne(id);
   }
 
-  // GET by project
-  @Get('/project/:projectId')
+  // GET all thumbnailss by project
+  @Get('/projectThumbnails/:projectId')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get blueprints by project id' })
+  @ApiOperation({ summary: 'Get all blueprint thumnails by project id' })
   @ApiParam({ name: 'projectId', type: String })
   @ApiResponse({ status: 200, description: 'Blueprints list' })
-  findByProject(@Param('projectId') projectId: string) {
-    return this.blueprintService.findByProject(projectId);
+  findThumbnailsByProject(@Param('projectId') projectId: string) {
+    return this.blueprintService.findThumbnailsByProject(projectId);
   }
 
   // GET my files
@@ -133,7 +133,7 @@ export class BlueprintController {
   }
 
   // GET OLDEST BLUEPRINT
-  @Get('/oldestBlueprintUrl/:projectId')
+  @Get('/oldestBlueprintThumbnailUrl/:projectId')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get oldest blueprint created' })
   @ApiParam({ name: 'projectId', type: String })
@@ -141,7 +141,7 @@ export class BlueprintController {
   getOldestBlueprintUrl(
     @Param('projectId') projectId,
   ){
-    return this.blueprintService.getOldestBlueprintUrl(projectId)
+    return this.blueprintService.getOldestBlueprintThumbnailUrl(projectId)
   }
 
   // GET BLUEPRINT DOWNLOAD URL ONLY
