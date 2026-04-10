@@ -4,7 +4,7 @@ export class UpdateBlueprintDto {
 
   @IsString()
   @IsOptional()
-  filename?: string;
+  blueprintName?: string;
 
   @IsOptional()
   @IsArray()
