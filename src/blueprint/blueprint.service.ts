@@ -12,6 +12,7 @@ import { FileStorageService, StoredFile } from 'src/file-storage/file-storage.se
 import { ThumbnailService } from 'src/thumbnail/thumbnail.service';
 
 import { randomUUID } from "crypto";
+import axios from 'axios';
 
 @Injectable()
 export class BlueprintService {
@@ -192,6 +193,31 @@ export class BlueprintService {
 
     return {
       downloadUrl,
+    };
+  }
+
+  async getImageStream(id: string): Promise<{
+    stream: NodeJS.ReadableStream;
+    contentType: string;
+  }> {
+    const blueprint = await this.blueprintModel.findById(id).lean();
+
+    if (!blueprint) {
+      throw new NotFoundException('Blueprint no encontrado');
+    }
+
+    const signedUrl = await this.storageService.getSignedDownloadUrl(
+      blueprint.filename,
+    );
+
+    // pedimos la imagen como stream
+    const response = await axios.get(signedUrl, {
+      responseType: 'stream',
+    });
+
+    return {
+      stream: response.data,
+      contentType: response.headers['content-type'] || 'image/png',
     };
   }
 }

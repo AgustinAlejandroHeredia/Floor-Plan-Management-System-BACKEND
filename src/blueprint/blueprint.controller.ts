@@ -156,4 +156,23 @@ export class BlueprintController {
     return this.blueprintService.getBlueprintDownloadUrlOnly(blueprintId)
   }
 
+  // GET RAW IMAGE FOR BLUEPRINT VIEW AND CROP
+  @Get(':id/image')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get blueprint image (stream)' })
+  @ApiParam({ name: 'id', type: String })
+  async getImage(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    const { stream, contentType } =
+      await this.blueprintService.getImageStream(id);
+
+    res.set({
+      'Content-Type': contentType,
+    });
+
+    stream.pipe(res);
+  }
+
 }
