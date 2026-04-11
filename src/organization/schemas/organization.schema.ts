@@ -41,4 +41,4 @@ export class Organization {
 export const OrganizationSchema = SchemaFactory.createForClass(Organization);
 
 // NO DUPLICATED ORGANIZATION NAMES
-OrganizationSchema.index({ name: 1 });
+OrganizationSchema.index({ name: 1 }, { unique: true });

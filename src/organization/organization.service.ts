@@ -52,10 +52,12 @@ export class OrganizationService {
 
       return savedOrganization;
 
-    } catch (error) {
+    } catch (error: any) {
       if (error.code === 11000) {
+        const field = Object.keys(error.keyPattern)[0];
+
         throw new BadRequestException(
-          'Organization with provided unique field (name, email or phone number) already exists',
+          `Organization with this ${field} already exists`
         );
       }
       throw error;
