@@ -105,16 +105,6 @@ export class OrganizationController {
     return this.organizationService.update(id, dto);
   }
 
-  // DELETE
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Delete organization' })
-  @ApiParam({ name: 'id', type: String })
-  @ApiResponse({ status: 200, description: 'Organization deleted successfully' })
-  remove(@Param('id') id: string) {
-    //return this.organizationService.remove(id);
-  }
-
   // ADD USER TO ORGANIZATION
   @Post('addUser/:organizationId')
   @UseGuards(JwtAuthGuard)
