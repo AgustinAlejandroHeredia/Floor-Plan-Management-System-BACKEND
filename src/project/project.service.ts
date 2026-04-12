@@ -227,4 +227,15 @@ export class ProjectService {
 
     return projects;
   }
+
+  // use-case/delete_organization
+  async deleteAllProjectsByOrganizationId(organizationId: string): Promise<void> {
+    if(!organizationId){
+      throw new BadRequestException('organizationId is required');
+    }
+    const objectId = new Types.ObjectId(organizationId)
+    await this.projectModel.deleteMany({
+      organizationId: objectId
+    })
+  }
 }

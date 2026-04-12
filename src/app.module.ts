@@ -14,6 +14,7 @@ import { ThumbnailModule } from './thumbnail/thumbnail.module';
 
 // MONGOOSE
 import { MongooseModule } from '@nestjs/mongoose';
+import { DeleteOrganizationModule } from './use-cases/organization/delete-organization/delete_organization.module';
 
 @Module({
   imports: [
@@ -46,6 +47,8 @@ import { MongooseModule } from '@nestjs/mongoose';
     ProjectMembershipModule,
 
     ThumbnailModule,
+
+    DeleteOrganizationModule,
     
   ],
   controllers: [AppController],

@@ -50,7 +50,7 @@ export class ProjectMembershipService {
       });
 
       return await created.save();
-    } catch (error) {
+    } catch (error: any) {
       if (error.code === 11000) {
         throw new BadRequestException('User is already a member of this project');
       }
@@ -188,6 +188,30 @@ export class ProjectMembershipService {
     }
 
     return membership.projectRole;
+  }
+
+  // use-case/delete_project
+  async deleteAllMembershipsByProjectId(projectId: string): Promise<void> {
+    if(!projectId){
+      return
+    }
+
+    const objectId = new Types.ObjectId(projectId)
+
+    await this.membershipModel.deleteMany({
+      projectId: objectId
+    })
+  }
+
+  // use-case/delete_organization
+  async deleteAllMembershipsByManyProjectIds(projectIds: string[]): Promise<void> {
+    if(!projectIds || projectIds.length === 0){
+      return
+    }
+    const objectIds = projectIds.map(id => new Types.ObjectId(id));
+    await this.membershipModel.deleteMany({
+      projectId: { $in: objectIds }
+    })
   }
 
 }

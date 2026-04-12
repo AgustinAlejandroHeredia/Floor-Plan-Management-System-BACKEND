@@ -16,5 +16,6 @@ import { ThumbnailModule } from 'src/thumbnail/thumbnail.module';
   ],
   controllers: [BlueprintController],
   providers: [BlueprintService],
+  exports: [BlueprintService],
 })
 export class BlueprintModule {}

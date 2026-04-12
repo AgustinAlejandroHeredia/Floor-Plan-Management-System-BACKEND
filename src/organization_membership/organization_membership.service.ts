@@ -28,7 +28,7 @@ export class OrganizationMembershipService {
       });
 
       return await created.save();
-    } catch (error) {
+    } catch (error: any) {
       // Error de índice único (duplicado)
       if (error.code === 11000) {
         throw new BadRequestException('User is already a member of this organization');
@@ -154,6 +154,19 @@ export class OrganizationMembershipService {
       user: membership.userId,
       organizationRole: membership.organizationRole,
     }));
+  }
+
+  // use-case/delete_organization
+  async deleteAllMembershipsByOrganizationId(organizationId: string): Promise<void> {
+    if(!organizationId){
+      return
+    }
+
+    const objectId = new Types.ObjectId(organizationId)
+
+    await this.membershipModel.deleteMany({
+      organizationId: objectId
+    })
   }
 
 }

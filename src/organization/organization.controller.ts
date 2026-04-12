@@ -31,7 +31,9 @@ import { OrganizationRole } from 'src/common/role.enum';
 @Controller('organizations')
 export class OrganizationController {
 
-  constructor(private readonly organizationService: OrganizationService) {}
+  constructor(
+    private readonly organizationService: OrganizationService,
+  ) {}
 
   // CREATE
   @Post()
@@ -110,7 +112,7 @@ export class OrganizationController {
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({ status: 200, description: 'Organization deleted successfully' })
   remove(@Param('id') id: string) {
-    return this.organizationService.remove(id);
+    //return this.organizationService.remove(id);
   }
 
   // ADD USER TO ORGANIZATION

@@ -14,6 +14,9 @@ import { ProjectModule } from 'src/project/project.module';
     OrganizationMembershipModule,
   ],
   providers: [ProjectMembershipService],
-  exports: [ProjectMembershipService],
+  exports: [
+    ProjectMembershipService,
+    MongooseModule, // para el use-case
+  ],
 })
 export class ProjectMembershipModule {}

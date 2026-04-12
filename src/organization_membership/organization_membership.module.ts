@@ -10,6 +10,9 @@ import { OrganizationMembership, OrganizationMembershipSchema } from './schemas/
     ]),
   ],
   providers: [OrganizationMembershipService],
-  exports: [OrganizationMembershipService],
+  exports: [
+    OrganizationMembershipService,
+    MongooseModule, // para el use-case
+  ],
 })
 export class OrganizationMembershipModule {}

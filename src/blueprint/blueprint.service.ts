@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   InternalServerErrorException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -13,6 +14,7 @@ import { ThumbnailService } from 'src/thumbnail/thumbnail.service';
 
 import { randomUUID } from "crypto";
 import axios from 'axios';
+import e from 'express';
 
 @Injectable()
 export class BlueprintService {
@@ -219,5 +221,39 @@ export class BlueprintService {
       stream: response.data,
       contentType: response.headers['content-type'] || 'image/png',
     };
+  }
+
+  async getAllBlueprintsByProjectId(projectId: string): Promise<BlueprintDocument[]> {
+    const blueprints = await this.blueprintModel.find({ projectId: new Types.ObjectId(projectId) })
+    return blueprints
+  }
+
+  // use-case/delete-organization
+  async deleteBlueprintsByManyProjectIds(projectIds: string[]): Promise<void> {
+    if(!projectIds || projectIds.length === 0){
+      throw new BadRequestException('projectIds is required');
+    }
+    const objectIds = projectIds.map(id => new Types.ObjectId(id));
+    await this.blueprintModel.deleteMany({
+      projectId: { $in: objectIds }
+    })
+  }
+
+  // use-case/delete-organization
+  async getAllSotrageIdsByManyProjectIds(projectIds: string[]): Promise<string[]> {
+    if(!projectIds || projectIds.length === 0){
+      throw new BadRequestException('projectIds is required');
+    }
+
+    const objectIds = projectIds.map(id => new Types.ObjectId(id));
+
+    const results = this.blueprintModel
+      .find(
+        { projectId: { $in: objectIds } },
+        { storageId: 1, _id: 0 }
+      )
+      .lean()
+
+    return (await results).map(s => s.storageId)
   }
 }

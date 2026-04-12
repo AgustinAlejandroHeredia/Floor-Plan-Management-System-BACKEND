@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { OrganizationService } from './organization.service';
 import { OrganizationController } from './organization.controller';
 import { MongooseModule } from '@nestjs/mongoose/dist/mongoose.module';
@@ -16,5 +16,6 @@ import { ProjectMembershipModule } from 'src/project_membership/project_membersh
   ],
   controllers: [OrganizationController],
   providers: [OrganizationService],
+  exports: [OrganizationService],
 })
 export class OrganizationModule {}
