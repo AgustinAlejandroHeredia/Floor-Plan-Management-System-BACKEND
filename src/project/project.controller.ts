@@ -98,16 +98,6 @@ export class ProjectController {
     return this.projectService.update(id, dto);
   }
 
-  // DELETE
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Delete project' })
-  @ApiParam({ name: 'id', type: String })
-  @ApiResponse({ status: 200, description: 'Project deleted successfully' })
-  remove(@Param('id') id: string) {
-    return this.projectService.remove(id);
-  }
-
   // DELETE USER FROM PROJECT
   @Delete('user/:projectId')
   @UseGuards(JwtAuthGuard)

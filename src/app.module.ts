@@ -14,7 +14,9 @@ import { ThumbnailModule } from './thumbnail/thumbnail.module';
 
 // MONGOOSE
 import { MongooseModule } from '@nestjs/mongoose';
+
 import { DeleteOrganizationModule } from './use-cases/organization/delete-organization/delete_organization.module';
+import { DeleteProjectModule } from './use-cases/project/delete-project/delete_project.module';
 
 @Module({
   imports: [
@@ -49,6 +51,8 @@ import { DeleteOrganizationModule } from './use-cases/organization/delete-organi
     ThumbnailModule,
 
     DeleteOrganizationModule,
+
+    DeleteProjectModule,
     
   ],
   controllers: [AppController],

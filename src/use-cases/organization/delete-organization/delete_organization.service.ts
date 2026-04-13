@@ -24,7 +24,7 @@ export class DeleteOrganizationService {
 
         const errors: string[] = [];
 
-        console.log("------ START DELETE ORG ------", organizationId);
+        console.log("------ START DELETE ORG : ", organizationId, " ------");
 
         // 1. verify exists (CRITICAL)
         const organization = await this.organizationService.findOne(organizationId);
@@ -86,7 +86,7 @@ export class DeleteOrganizationService {
         await this.organizationService.remove(organizationId);
         console.log("9) Organization deleted");
 
-        console.log("------ DELETE COMPLETED ------");
+        console.log("------------------------ DELETE COMPLETED ------------------------");
 
         return errors;
     }

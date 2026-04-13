@@ -16,6 +16,9 @@ import { ProjectMembershipModule } from 'src/project_membership/project_membersh
   ],
   controllers: [OrganizationController],
   providers: [OrganizationService],
-  exports: [OrganizationService],
+  exports: [
+    OrganizationService,
+    MongooseModule,
+  ],
 })
 export class OrganizationModule {}

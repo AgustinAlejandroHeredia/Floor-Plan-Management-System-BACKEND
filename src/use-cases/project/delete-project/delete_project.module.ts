@@ -1,14 +1,11 @@
 import { Module } from '@nestjs/common';
 
-import { DeleteOrganizationController } from './delete_organization.controller';
-import { DeleteOrganizationService } from './delete_organization.service';
+import { DeleteProjectController } from './delete_project.controller';
+import { DeleteProjectService } from './delete_project.service';
 
 // RELATIONSHIP
-import { OrganizationMembershipModule } from 'src/organization_membership/organization_membership.module';
 import { ProjectMembershipModule } from 'src/project_membership/project_membership.module';
-
-// ORGANIZATION
-import { OrganizationModule } from 'src/organization/organization.module';
+import { OrganizationMembershipModule } from 'src/organization_membership/organization_membership.module';
 
 // PROJECT
 import { ProjectModule } from 'src/project/project.module';
@@ -27,19 +24,18 @@ import { AuthModule } from 'src/auth/auth.module';
         AuthModule,
         OrganizationMembershipModule,
         ProjectMembershipModule,
-        OrganizationModule,
         ProjectModule,
         BlueprintModule,
         FileStorageModule,
     ],
     providers: [
-        DeleteOrganizationService,
+        DeleteProjectService,
     ],
     exports: [
-        DeleteOrganizationService,
+        DeleteProjectService,
     ],
     controllers: [
-        DeleteOrganizationController,
+        DeleteProjectController,
     ],
 })
-export class DeleteOrganizationModule {}
+export class DeleteProjectModule {}

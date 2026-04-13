@@ -16,19 +16,19 @@ import { UserRoles } from 'src/auth/decorators/user-roles.decorator';
 import { UserRole } from 'src/common/role.enum';
 
 
-@ApiTags('OrganizationDelete')
+@ApiTags('DeleteOrganization')
 @ApiBearerAuth('access-token')
-@Controller('organizationdelete')
+@Controller('deleteorganization')
 export class DeleteOrganizationController {
 
     constructor(
         private readonly deleteOrganizationService: DeleteOrganizationService,
     ) {}
 
-    @Delete('deleteOrganization/:organizationId')
+    @Delete(':organizationId')
     @UseGuards(JwtAuthGuard, AccessGuard)
     @UserRoles(UserRole.SUPERADMIN)
-    @ApiOperation({ summary: 'Delete organization (org, projects, memberships, blueprints and files related)' })
+    @ApiOperation({ summary: 'Delete organization (org, projects, memberships, blueprints and related files)' })
     @ApiResponse({ status: 201, description: 'Organization deleted successfully' })
     delete(
         @Param('organizationId') organizationId: string

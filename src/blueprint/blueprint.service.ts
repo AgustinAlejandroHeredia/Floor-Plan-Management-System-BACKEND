@@ -228,15 +228,44 @@ export class BlueprintService {
     return blueprints
   }
 
+  // use-case/delete-project
+  async deleteBlueprintsByProjectId(projectId: string): Promise<void> {
+    if(!projectId){
+      throw new BadRequestException('ProjectId is required');
+    }
+    const objectId = new Types.ObjectId(projectId)
+    await this.blueprintModel.deleteMany({
+      projectId: objectId
+    })
+  }
+
   // use-case/delete-organization
   async deleteBlueprintsByManyProjectIds(projectIds: string[]): Promise<void> {
     if(!projectIds || projectIds.length === 0){
-      throw new BadRequestException('projectIds is required');
+      throw new BadRequestException('ProjectIds is required');
     }
     const objectIds = projectIds.map(id => new Types.ObjectId(id));
     await this.blueprintModel.deleteMany({
       projectId: { $in: objectIds }
     })
+  }
+
+  // use-case/delete-project
+  async getAllStorageIdsByProjectId(projectId: string): Promise<string[]> {
+    if(!projectId){
+      throw new BadRequestException('projectId is required');
+    }
+
+    const objectId = new Types.ObjectId(projectId)
+
+    const results = this.blueprintModel
+      .find(
+        { projectId: objectId },
+        { storageId: 1, _id: 0 }
+      )
+      .lean()
+    
+    return (await results).map(s => s.storageId)
   }
 
   // use-case/delete-organization
@@ -250,7 +279,7 @@ export class BlueprintService {
     const results = this.blueprintModel
       .find(
         { projectId: { $in: objectIds } },
-        { storageId: 1, _id: 0 }
+        { storageId: 1, _id: 0 },
       )
       .lean()
 
