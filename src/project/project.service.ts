@@ -48,9 +48,9 @@ export class ProjectService {
     } catch (error) {
 
       // rollback
-      await this.remove(savedProject._id.toString())
+      await this.projectModel.findByIdAndDelete(savedProject._id)
 
-      throw new InternalServerErrorException('Error creating project membership for the creator');
+      throw new InternalServerErrorException('Error creating project membership for the creator')
     }
 
     return savedProject;
@@ -59,24 +59,28 @@ export class ProjectService {
 
   // GET ALL
   async findAll(): Promise<Project[]> {
-    return this.projectModel.find().populate('creatorUserId organizationId').exec();
+    return this.projectModel.find().lean()
   }
 
 
   // GET ONE
   async findOne(id: string): Promise<Project> {
-    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('Project not found');
-    const project = await this.projectModel.findById(id).populate('creatorUserId organizationId');
-    if (!project) throw new NotFoundException('Project not found');
-    return project;
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('Project not found')
+    const project = await this.projectModel.findById(id).lean()
+    if (!project) throw new NotFoundException('Project not found')
+    return project
   }
 
   // UPDATE
   async update(id: string, dto: UpdateProjectDto): Promise<Project> {
-    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('Project not found');
-    const updated = await this.projectModel.findByIdAndUpdate(id, dto, { new: true }).populate('creatorUserId organizationId');
-    if (!updated) throw new NotFoundException('Project not found');
-    return updated;
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('Project not found')
+    const updated = await this.projectModel.findByIdAndUpdate(
+      id,
+      dto,
+      { new: true, runValidators: true }
+    ).lean()
+    if (!updated) throw new NotFoundException('Project not found')
+    return updated
   }
 
 
@@ -92,19 +96,21 @@ export class ProjectService {
       const membership = await this.projectMembershipService.findByUserIdAndProjectId(
         userId,
         projectId,
-      );
+      ).catch(() => null)
+
+      if(!membership) return false
 
       // 2. Actualizar el rol
       await this.projectMembershipService.updateRole(membership._id.toString(), { projectRole: newRole });
 
-      return true;
+      return true
     } catch (error) {
       if (error instanceof NotFoundException) {
         // Membership no existe
         return false;
       }
       // Otros errores se pueden propagar o también devolver false
-      return false;
+      return false
     }
   }
 
@@ -131,7 +137,12 @@ export class ProjectService {
   async addUser(userId: string, projectId: string): Promise<boolean> {
     try {
 
-      const project = await this.findOne(projectId)
+      const project = await this.projectModel
+        .findById(projectId)
+        .select('organizationId')
+        .lean()
+
+      if(!project) throw new NotFoundException('Project not found');
 
       await this.projectMembershipService.create({
         userId,
@@ -139,12 +150,12 @@ export class ProjectService {
         projectRole: ProjectRole.VIEWER,
         organizationId: project.organizationId.toString()
       });
+
       return true;
-    } catch (error) {
-      if (error instanceof BadRequestException && error.message.includes('User already a member')) {
-        return false;
-      }
-      throw new InternalServerErrorException('Error when adding user');
+
+    } catch (error: any) {
+      if (error.code === 11000) return false
+      throw new InternalServerErrorException('Error when adding user')
     }
   }
 
@@ -155,10 +166,12 @@ export class ProjectService {
     userId: string,
   ): Promise<Project[]> {
     // Obtener todas las memberships del usuario
-    const memberships = await this.projectMembershipService.findByUserId(userId);
+    const memberships = await this.projectMembershipService.findByUserId(userId)
+
+    if(memberships.length === 0) return []
 
     // Extraer solo los projectId
-    const projectIds = memberships.map(m => m.projectId);
+    const projectIds = memberships.map(m => m.projectId)
 
     if (projectIds.length === 0) return []; // Si no tiene memberships, retorno vacío
 
@@ -168,19 +181,18 @@ export class ProjectService {
         _id: { $in: projectIds },
         organizationId: new Types.ObjectId(organizationId),
       })
-      .exec();
+      .lean()
 
-    return projects;
+    return projects
   }
 
 
   // ALL PROJECTS BY organizationId
   async getAllProjectsByOrganizationId(organizationId: string): Promise<ProjectDocument[]> {
-    const projects = this.projectModel.find({
-      organizationId: new Types.ObjectId(organizationId)
-    })
-    console.log("PROJECTS with organizationId ", organizationId, ": ", projects)
-    return projects
+    return this.projectModel
+      .find({
+        organizationId: new Types.ObjectId(organizationId)
+      })
   }
 
 
@@ -189,43 +201,15 @@ export class ProjectService {
     userId: string,
     projectId: string,
   ): Promise<string> {
-
-    const projectRole = await this.projectMembershipService.getUserRole(userId, projectId)
-
-    if (!projectRole) {
-      throw new NotFoundException('User is not a member of this project');
-    }
-
-    return projectRole;
+    return this.projectMembershipService.getUserRole(userId, projectId);
   }
 
-
-  /*
-  // USED BEFORE ON project.membership.service.ts LINE 31
-  async findById(projectId: string) {
-    const project = await this.projectModel
-      .findById(new Types.ObjectId(projectId))
-      .select('organizationId');
-
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
-
-    return project;
-  }
-  */
 
   // only used when deletes user from organizations, ProjectDocument is necesary
   async findByOrganizationId(organizationId: string): Promise<ProjectDocument[]> {
-    
-    const orgObjectId = new Types.ObjectId(organizationId);
-    const projects = await this.projectModel.find({ organizationId: orgObjectId });
-
-    if (!projects || projects.length === 0) {
-      throw new NotFoundException(`No projects found for organization ${organizationId}`);
-    }
-
-    return projects;
+    return this.projectModel.find({
+      organizationId: new Types.ObjectId(organizationId)
+    })
   }
 
   // use-case/delete_organization
@@ -233,9 +217,8 @@ export class ProjectService {
     if(!organizationId){
       throw new BadRequestException('organizationId is required');
     }
-    const objectId = new Types.ObjectId(organizationId)
     await this.projectModel.deleteMany({
-      organizationId: objectId
+      organizationId: new Types.ObjectId(organizationId)
     })
   }
 }

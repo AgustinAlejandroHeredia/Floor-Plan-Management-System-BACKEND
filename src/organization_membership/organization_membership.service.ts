@@ -131,7 +131,8 @@ export class OrganizationMembershipService {
         userId: new Types.ObjectId(userId),
         organizationId: new Types.ObjectId(organizationId),
       })
-      .select('organizationRole');
+      .select('organizationRole')
+      .lean()
 
     if (!membership) {
       throw new NotFoundException('User is not a member of this organization');
@@ -148,7 +149,10 @@ export class OrganizationMembershipService {
       .find({
         organizationId: new Types.ObjectId(organizationId),
       })
-      .populate<{ userId: UserDocument }>('userId');
+      .populate<{ userId: UserDocument }>({
+        path: 'userId',
+        select: '_id name email picture',
+      })
 
     return memberships.map((membership) => ({
       user: membership.userId,
@@ -159,7 +163,7 @@ export class OrganizationMembershipService {
   // use-case/delete_organization
   async deleteAllMembershipsByOrganizationId(organizationId: string): Promise<void> {
     if(!organizationId){
-      return
+      throw new BadRequestException('organizationId is required')
     }
 
     const objectId = new Types.ObjectId(organizationId)

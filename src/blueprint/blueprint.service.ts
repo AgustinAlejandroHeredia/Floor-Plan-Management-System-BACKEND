@@ -14,7 +14,6 @@ import { ThumbnailService } from 'src/thumbnail/thumbnail.service';
 
 import { randomUUID } from "crypto";
 import axios from 'axios';
-import e from 'express';
 
 @Injectable()
 export class BlueprintService {
@@ -77,11 +76,15 @@ export class BlueprintService {
     } catch (error) {
       console.log("ERROR : ", error)
       // rollback
-      if(uploadedFile){
-        await this.storageService.deleteFile(uploadedFile.id);
-      }
-      if(uploadedThumbnail){
-        await this.storageService.deleteFile(uploadedThumbnail.id)
+      try {
+        if(uploadedFile){
+          await this.storageService.deleteFile(uploadedFile.id);
+        }
+        if(uploadedThumbnail){
+          await this.storageService.deleteFile(uploadedThumbnail.id)
+        }
+      } catch (error) {
+        console.error("Rollback failed : ", error)
       }
       throw new InternalServerErrorException('Error creando blueprint');
     }
@@ -144,22 +147,38 @@ export class BlueprintService {
 
   // DELETE (backblaze + mongo)
   async remove(id: string) {
-    const blueprint = await this.blueprintModel.findById(id);
+    const blueprint = await this.blueprintModel
+      .findById(id, {
+        storageId: 1,
+        storageThumbnailId: 1,
+      })
+      .lean()
 
     if (!blueprint) {
       throw new NotFoundException('Blueprint no encontrado');
     }
 
-    // original file
-    await this.storageService.deleteFile(blueprint.storageId);
-
-    // thumbnail
-    await this.storageService.deleteFile(blueprint.storageThumbnailId)
-
     // db reg
     await this.blueprintModel.findByIdAndDelete(id);
 
-    return { message: 'Blueprint eliminado correctamente' };
+    // blueprints y thumbnails
+    const results = await Promise.allSettled([
+      this.storageService.deleteFile(blueprint.storageId),
+      this.storageService.deleteFile(blueprint.storageThumbnailId),
+    ]);
+
+    const failed = results.filter(r => r.status === 'rejected');
+    if (failed.length > 0) {
+      console.error(`Failed to delete ${failed.length} files for blueprint ${id}`);
+    }
+
+    return {
+      message: 'Blueprint eliminado correctamente',
+      warnings:
+        failed.length > 0
+          ? [`${failed.length} files could not be deleted from storage`]
+          : [],
+    };
   }
 
   async getOldestBlueprintThumbnailUrl(projectId: string) {
@@ -224,7 +243,9 @@ export class BlueprintService {
   }
 
   async getAllBlueprintsByProjectId(projectId: string): Promise<BlueprintDocument[]> {
-    const blueprints = await this.blueprintModel.find({ projectId: new Types.ObjectId(projectId) })
+    const blueprints = await this.blueprintModel
+      .find({ projectId: new Types.ObjectId(projectId) })
+      .sort({ creationDate: 1 })
     return blueprints
   }
 
@@ -276,13 +297,13 @@ export class BlueprintService {
 
     const objectIds = projectIds.map(id => new Types.ObjectId(id));
 
-    const results = this.blueprintModel
+    const results = await this.blueprintModel
       .find(
         { projectId: { $in: objectIds } },
         { storageId: 1, _id: 0 },
       )
       .lean()
 
-    return (await results).map(s => s.storageId)
+    return results.map(s => s.storageId)
   }
 }

@@ -8,7 +8,6 @@ import { UpdateOrganizationDto } from './dto/update-organization.dto';
 
 // SCHEMA
 import { Organization, OrganizationDocument } from './schemas/organization.schema';
-import { User } from 'src/user/schemas/user.schema';
 
 // RELATIONS
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
@@ -44,6 +43,7 @@ export class OrganizationService {
           organizationRole: OrganizationRole.ADMIN, // rol de administrador
         });
       } catch (membershipError) {
+        await this.organizationModel.findByIdAndDelete(savedOrganization._id)
         console.log('ERROR creando OrganizationMembership:', membershipError);
         throw new InternalServerErrorException(
           'Error creating organization membership for the creator',
@@ -66,7 +66,10 @@ export class OrganizationService {
 
   // GET ALL
   async findAll(): Promise<Organization[]> {
-    return this.organizationModel.find();
+    return this.organizationModel
+      .find()
+      .sort({ name: 1 })
+      .lean()
   }
 
   // GET ALL MEMBERS OF THE ORGANIZATION AS ADMIN
@@ -90,9 +93,9 @@ export class OrganizationService {
 
   // GET ONE
   async findOne(id: string): Promise<Organization> {
-    const organization = await this.organizationModel.findById(
-      new Types.ObjectId(id),
-    );
+    const organization = await this.organizationModel
+      .findById(new Types.ObjectId(id))
+      .lean();
 
     if (!organization) {
       throw new NotFoundException('Organization not found');
@@ -154,7 +157,7 @@ export class OrganizationService {
       }
 
       return updated;
-    } catch (error) {
+    } catch (error: any) {
       // Capturar errores de índice único que puedan saltar por alguna razón
       if (error.code === 11000) {
         throw new BadRequestException('Duplicate value for a unique field');
@@ -232,10 +235,9 @@ export class OrganizationService {
   ): Promise<OrganizationMembership> {
 
     // verificar que exista la membership
-    const memberships = await this.organizationMembershipService.findByUserId(userId);
-
-    const membership = memberships.find(
-      m => m.organizationId.toString() === organizationId,
+    const membership = await this.organizationMembershipService.findByUserIdAndOrganizationId(
+      userId,
+      organizationId,
     );
 
     if (!membership) {
