@@ -60,4 +60,11 @@ export class UserController {
     return await this.userService.getUserProjectsByOrganization(req.user.internalId, organizationId)
   }
 
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UserRoles(UserRole.SUPERADMIN)
+  @Get('allUsers/superadmin')
+  async getAllUsersAsSuperadmin(){
+    return await this.userService.findAll()
+  }
+
 }

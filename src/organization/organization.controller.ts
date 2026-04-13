@@ -24,7 +24,9 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
-import { OrganizationRole } from 'src/common/role.enum';
+import { OrganizationRole, UserRole } from 'src/common/role.enum';
+import { UserRoles } from 'src/auth/decorators/user-roles.decorator';
+import { AccessGuard } from 'src/auth/guards/access.guard';
 
 @ApiTags('Organizations')
 @ApiBearerAuth('access-token')
@@ -61,8 +63,9 @@ export class OrganizationController {
   }
 
   // GET ALL
-  @Get()
-  @UseGuards(JwtAuthGuard)
+  @Get('/allOrganizations/superadmin')
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UserRoles(UserRole.SUPERADMIN)
   @ApiOperation({ summary: 'Get all organizations' })
   @ApiResponse({ status: 200, description: 'Organizations list' })
   findAll() {
