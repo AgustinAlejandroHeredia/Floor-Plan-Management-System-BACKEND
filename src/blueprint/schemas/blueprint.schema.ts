@@ -42,6 +42,9 @@ export class Blueprint {
     @Prop({ required: true, type: Types.ObjectId, ref: 'User', index: true })
     uploadedBy: Types.ObjectId
 
+    @Prop({ required: false, type: Types.ObjectId, ref: 'Blueprint'})
+    originalBlueprintId?: Types.ObjectId
+
 }
 
 export const BlueprintSchema = SchemaFactory.createForClass(Blueprint);

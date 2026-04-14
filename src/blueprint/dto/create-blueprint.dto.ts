@@ -1,4 +1,4 @@
-import { IsArray, IsMongoId, IsNumber, IsString } from 'class-validator';
+import { IsArray, IsMongoId, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateBlueprintDto {
 
@@ -14,5 +14,9 @@ export class CreateBlueprintDto {
   @IsArray()
   @IsString({ each: true })
   tags: string[]
+
+  @IsOptional()
+  @IsMongoId()
+  originalBlueprintId?: string 
 
 }
