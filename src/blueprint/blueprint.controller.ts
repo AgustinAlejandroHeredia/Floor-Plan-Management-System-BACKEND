@@ -185,4 +185,14 @@ export class BlueprintController {
     return await this.blueprintService.getBlueprintCountByOrganizationId(organizationId)
   }
 
+  @Get('/counts/:organizationIds')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get blueprint count for the provided organization ids' })
+  @ApiParam({ name: 'organizationId', type: String })
+  async getBlueprintCountsByOrganizationIds(
+    @Param('organizationIds') organizationIds: string[],
+  ){
+    return await this.blueprintService.getBlueprintCountsByOrganizationIds(organizationIds)
+  }
+
 }

@@ -278,6 +278,52 @@ export class BlueprintService {
       })
   }
 
+  async getBlueprintCountsByOrganizationIds(
+    organizationIds: string[] | string,
+  ): Promise<{ organizationId: string; count: number }[]> {
+
+    const idsArray =
+      Array.isArray(organizationIds)
+        ? organizationIds
+        : typeof organizationIds === 'string'
+          ? organizationIds.split(',')
+          : [];
+
+    if (idsArray.length === 0) {
+      throw new BadRequestException('organizationIds is required');
+    }
+
+    console.log("ORGANIZATION IDS LIST : ", idsArray);
+
+    const objectIds = idsArray.map(
+      (id) => new Types.ObjectId(id),
+    );
+
+    const results = await this.blueprintModel.aggregate([
+      {
+        $match: {
+          organizationId: { $in: objectIds },
+        },
+      },
+      {
+        $group: {
+          _id: '$organizationId',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          organizationId: '$_id',
+          count: 1,
+        },
+      },
+    ]);
+
+    return results;
+  }
+
+
   async getAllBlueprintsByProjectId(projectId: string): Promise<BlueprintDocument[]> {
     const blueprints = await this.blueprintModel
       .find({ projectId: new Types.ObjectId(projectId) })
