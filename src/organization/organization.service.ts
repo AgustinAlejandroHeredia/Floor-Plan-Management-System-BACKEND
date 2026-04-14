@@ -28,7 +28,6 @@ export class OrganizationService {
   // CREATE
   async create(
     createDto: CreateOrganizationDto,
-    creatorUserId: string,
   ): Promise<Organization> {
     try {
       // Crear la organización
@@ -38,7 +37,7 @@ export class OrganizationService {
       // Crear automáticamente el OrganizationMembership del creador
       try {
         await this.organizationMembershipService.create({
-          userId: creatorUserId,
+          userId: createDto.adminId,
           organizationId: savedOrganization._id.toString(),
           organizationRole: OrganizationRole.ADMIN, // rol de administrador
         });

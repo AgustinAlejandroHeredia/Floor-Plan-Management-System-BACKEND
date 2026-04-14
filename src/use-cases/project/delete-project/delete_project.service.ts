@@ -18,61 +18,64 @@ export class DeleteProjectService {
 
     async deleteProject(projectId: string): Promise<string[]> {
 
-        const errors: string[] = []
+        const errors: string[] = [];
 
         console.log("------ START DELETE PROJECT : ", projectId, " ------");
 
         // 1. verify exists (CRITICAL)
-        const project = await this.projectService.findOne(projectId)
-        if(!project) {
+        const project = await this.projectService.findOne(projectId);
+        if (!project) {
             throw new NotFoundException("Project with provided id doesn't exist");
         }
-        console.log("1) Project exists")
+        console.log("1) Project exists");
 
         // 2. storage ids
-        const storageIds = await this.blueprintService.getAllStorageIdsByProjectId(projectId)
-        console.log("2) Storage IDs obtained")
+        const storageIds = await this.blueprintService.getAllStorageIdsByProjectId(projectId);
 
-        // 3. delete files (NON-CRITICAL)
-        const fileResults = await Promise.allSettled(
-            storageIds.map(id => this.fileStorageService.deleteFile(id))
-        )
-
-        const failedFiles = fileResults.filter(r => r.status === 'rejected');
-        if(failedFiles.length > 0) {
-            errors.push(`Failed to delete ${failedFiles.length} files from storage`)
+        if (!storageIds || storageIds.length === 0) {
+            console.log("2) No storage IDs found (no blueprints)");
+            console.log("3) Skipped file deletion (no storage IDs)");
         } else {
-            console.log("3) Files deleted")
+            console.log("2) Storage IDs obtained");
+
+            // 3. delete files (NON-CRITICAL)
+            const fileResults = await Promise.allSettled(
+                storageIds.map(id => this.fileStorageService.deleteFile(id))
+            );
+
+            const failedFiles = fileResults.filter(r => r.status === 'rejected');
+            if (failedFiles.length > 0) {
+                errors.push(`Failed to delete ${failedFiles.length} files from storage`);
+            } else {
+                console.log("3) Files deleted");
+            }
         }
 
-        // 4. delete blueprints
+        // 4. delete blueprints (SAFE)
         try {
-            await this.blueprintService.deleteBlueprintsByProjectId(projectId)
-            console.log("4) Blueprints deleted")
+            await this.blueprintService.deleteBlueprintsByProjectId(projectId);
+            console.log("4) Blueprints deleted");
         } catch {
-            errors.push("Failed to delete blueprints")
+            console.log("4) Failed to delete blueprints");
+            errors.push("Failed to delete blueprints");
         }
 
-        // 5. project membership
+        // 5. project membership (SAFE)
         try {
-            await this.projectMembershipService.deleteAllMembershipsByProjectId(projectId)
-            console.log("5) Project memberships deleted")
+            await this.projectMembershipService.deleteAllMembershipsByProjectId(projectId);
+            console.log("5) Project memberships deleted");
         } catch {
-            errors.push("Failed to delete memberships")
+            console.log("5) Failed to delete memberships");
+            errors.push("Failed to delete memberships");
         }
 
         // 6. project (CRITICAL)
-        await this.projectService.remove(projectId)
-        console.log("6) Project deleted")
-
-        console.log("Errors detected: ", errors)
+        await this.projectService.remove(projectId);
+        console.log("6) Project deleted");
 
         console.log("------------------------ DELETE COMPLETED ------------------------");
-        
-        if(errors.length === 0){
-            return []
-        }
-        return ["error"]
+
+        return errors;
     }
 
 }

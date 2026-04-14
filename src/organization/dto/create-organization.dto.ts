@@ -1,4 +1,4 @@
-import { IsString, Length, IsEmail } from 'class-validator';
+import { IsString, Length, IsEmail, IsMongoId } from 'class-validator';
 
 export class CreateOrganizationDto {
 
@@ -21,5 +21,8 @@ export class CreateOrganizationDto {
   @IsString()
   @Length(3, 50)
   record: string;
+
+  @IsMongoId()
+  adminId: string;
 
 }

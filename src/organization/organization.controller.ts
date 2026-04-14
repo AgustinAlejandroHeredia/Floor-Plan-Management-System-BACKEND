@@ -56,10 +56,9 @@ export class OrganizationController {
     },
   })
   create(
-    @Req() req,
     @Body() dto: CreateOrganizationDto,
   ) {
-    return this.organizationService.create(dto, req.user.internalId);
+    return this.organizationService.create(dto);
   }
 
   // GET ALL

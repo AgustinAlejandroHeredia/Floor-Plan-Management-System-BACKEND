@@ -21,7 +21,6 @@ export class DeleteOrganizationService {
     ) {}
 
     async deleteOrganization(organizationId: string): Promise<string[]> {
-
         const errors: string[] = [];
 
         console.log("------ START DELETE ORG : ", organizationId, " ------");
@@ -36,41 +35,46 @@ export class DeleteOrganizationService {
         // 2. projects
         const projects = await this.projectService.findByOrganizationId(organizationId);
         const projectIds = projects.map(p => p._id.toString());
-        console.log("2) Projects obtained");
 
-        // 3. storage ids
-        const storageIds = await this.blueprintService.getAllSotrageIdsByManyProjectIds(projectIds);
-        console.log("3) Storage IDs obtained");
-
-        // 4. delete files (NON-CRITICAL)
-        const fileResults = await Promise.allSettled(
-            storageIds.map(id => this.fileStorageService.deleteFile(id))
-        );
-
-        const failedFiles = fileResults.filter(r => r.status === 'rejected');
-        if (failedFiles.length > 0) {
-            errors.push(`Failed to delete ${failedFiles.length} files from storage`);
+        if (projectIds.length === 0) {
+            console.log("2) No projects on this organization");
+            console.log("3) Skipped storage IDs (no projects)");
+            console.log("4) Skipped file deletion (no projects)");
+            console.log("5) Skipped blueprint deletion (no projects)");
+            console.log("6) Skipped project memberships deletion (no projects)");
         } else {
+            console.log("2) Projects obtained");
+
+            // 3. storage ids
+            const storageIds = await this.blueprintService.getAllSotrageIdsByManyProjectIds(projectIds);
+            console.log("3) Storage IDs obtained");
+
+            // 4. delete files (NON-CRITICAL)
+            const fileResults = await Promise.allSettled(
+            storageIds.map(id => this.fileStorageService.deleteFile(id))
+            );
+
+            const failedFiles = fileResults.filter(r => r.status === 'rejected');
+            if (failedFiles.length > 0) {
+            errors.push(`Failed to delete ${failedFiles.length} files from storage`);
+            } else {
             console.log("4) Files deleted");
-        }
-
-        // 5. blueprints
-        if (projectIds.length > 0) {
-            try {
-                await this.blueprintService.deleteBlueprintsByManyProjectIds(projectIds);
-                console.log("5) Blueprints deleted");
-            } catch {
-                errors.push("Failed to delete blueprints");
             }
-        }
 
-        // 6. project memberships
-        if (projectIds.length > 0) {
+            // 5. blueprints
             try {
-                await this.projectMembershipService.deleteAllMembershipsByManyProjectIds(projectIds);
-                console.log("6) Project memberships deleted");
+            await this.blueprintService.deleteBlueprintsByManyProjectIds(projectIds);
+            console.log("5) Blueprints deleted");
             } catch {
-                errors.push("Failed to delete project memberships");
+            errors.push("Failed to delete blueprints");
+            }
+
+            // 6. project memberships
+            try {
+            await this.projectMembershipService.deleteAllMembershipsByManyProjectIds(projectIds);
+            console.log("6) Project memberships deleted");
+            } catch {
+            errors.push("Failed to delete project memberships");
             }
         }
 
