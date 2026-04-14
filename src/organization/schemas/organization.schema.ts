@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import { MAX_BLUEPRINTS } from 'src/common/maximumBlueprintsCount';
 
 export type OrganizationDocument = Organization & Document;
 
@@ -35,6 +36,14 @@ export class Organization {
         maxlength: 50,
     })
     record: string;
+
+    @Prop({
+        required: true,
+        default: 50,
+        min: 1,
+        max: MAX_BLUEPRINTS,
+    })
+    maxBlueprints: number;
 
 }
 

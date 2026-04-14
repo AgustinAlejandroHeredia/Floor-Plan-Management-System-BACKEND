@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Blueprint, BlueprintSchema } from './schemas/blueprint.schema';
 import { FileStorageModule } from 'src/file-storage/file-storage.module';
 import { ThumbnailModule } from 'src/thumbnail/thumbnail.module';
+import { OrganizationModule } from 'src/organization/organization.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ThumbnailModule } from 'src/thumbnail/thumbnail.module';
     ]),
     FileStorageModule,
     ThumbnailModule,
+    OrganizationModule,
   ],
   controllers: [BlueprintController],
   providers: [BlueprintService],

@@ -11,6 +11,7 @@ import { CreateBlueprintDto } from './dto/create-blueprint.dto';
 import { UpdateBlueprintDto } from './dto/update-blueprint.dto';
 import { FileStorageService, StoredFile } from 'src/file-storage/file-storage.service';
 import { ThumbnailService } from 'src/thumbnail/thumbnail.service';
+import { OrganizationService } from 'src/organization/organization.service';
 
 import { randomUUID } from "crypto";
 import axios from 'axios';
@@ -22,6 +23,7 @@ export class BlueprintService {
     private blueprintModel: Model<BlueprintDocument>,
     private readonly storageService: FileStorageService,
     private readonly thumbnailService: ThumbnailService,
+    private readonly organizationService: OrganizationService
   ) {}
 
   // CREATE (upload + mongo)
@@ -31,7 +33,15 @@ export class BlueprintService {
     userId: string,
   ): Promise<Blueprint> {
     if (!file) {
-      throw new InternalServerErrorException('Archivo requerido');
+      throw new InternalServerErrorException('File required');
+    }
+
+    const organization = await this.organizationService.findOne(dto.organizationId)
+    const organizationBlueprintsCount = await this.getBlueprintCountByOrganizationId(dto.organizationId)
+    if(organizationBlueprintsCount+1 > Number(organization.maxBlueprints)){
+      throw new BadRequestException(
+        'Maximum organization blueprint count reached, cannot upload this file.'
+      )
     }
 
     // uploads it with unique name
@@ -260,6 +270,12 @@ export class BlueprintService {
       stream: response.data,
       contentType: response.headers['content-type'] || 'image/png',
     };
+  }
+
+  async getBlueprintCountByOrganizationId(organizationId: string): Promise<number> {
+      return await this.blueprintModel.countDocuments({
+        organizationId: new Types.ObjectId(organizationId)
+      })
   }
 
   async getAllBlueprintsByProjectId(projectId: string): Promise<BlueprintDocument[]> {

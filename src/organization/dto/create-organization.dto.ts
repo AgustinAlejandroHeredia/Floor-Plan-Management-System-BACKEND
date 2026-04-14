@@ -1,4 +1,6 @@
-import { IsString, Length, IsEmail, IsMongoId } from 'class-validator';
+import { Type } from 'class-transformer/types/decorators';
+import { IsString, Length, IsEmail, IsMongoId, IsNumber, IsInt, Min, Max } from 'class-validator';
+import { MAX_BLUEPRINTS } from 'src/common/maximumBlueprintsCount';
 
 export class CreateOrganizationDto {
 
@@ -24,5 +26,11 @@ export class CreateOrganizationDto {
 
   @IsMongoId()
   adminId: string;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(MAX_BLUEPRINTS)
+  maxBlueprints: number
 
 }

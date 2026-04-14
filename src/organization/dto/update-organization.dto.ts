@@ -1,4 +1,6 @@
-import { IsString, IsOptional, Length, IsEmail } from 'class-validator';
+import { Type } from 'class-transformer/types/decorators';
+import { IsString, IsOptional, Length, IsEmail, IsInt, Max, Min } from 'class-validator';
+import { MAX_BLUEPRINTS } from 'src/common/maximumBlueprintsCount';
 
 export class UpdateOrganizationDto {
 
@@ -26,5 +28,12 @@ export class UpdateOrganizationDto {
   @IsString()
   @Length(3, 50)
   record?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(MAX_BLUEPRINTS)
+  maxBlueprints?: number
 
 }
