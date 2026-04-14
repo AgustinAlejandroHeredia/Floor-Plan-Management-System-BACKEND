@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer/types/decorators';
+import { Type } from 'class-transformer';
 import { IsString, Length, IsEmail, IsMongoId, IsNumber, IsInt, Min, Max } from 'class-validator';
 import { MAX_BLUEPRINTS } from 'src/common/maximumBlueprintsCount';
 
