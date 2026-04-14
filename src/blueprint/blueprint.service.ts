@@ -70,6 +70,10 @@ export class BlueprintService {
         encoding: file.encoding,
         mimetype: file.mimetype,
         size: file.size,
+
+        ...(dto.originalBlueprintId && {
+          originalBlueprintId: new Types.ObjectId(dto.originalBlueprintId),
+        }),
       });
 
       return await blueprint.save();
@@ -100,7 +104,23 @@ export class BlueprintService {
 
     const downloadUrl = await this.storageService.getSignedDownloadUrl(
       blueprint.filename,
-    );
+    )
+
+    if(blueprint.originalBlueprintId){
+      const originalBlueprintName = (await this.blueprintModel
+        .findOne(
+          { _id: blueprint.originalBlueprintId },
+          { blueprintName: 1, _id: 0 },
+        )
+        .lean()
+      )?.blueprintName
+
+      return {
+        ...blueprint,
+        downloadUrl,
+        croppedFrom: originalBlueprintName,
+      }
+    }
 
     return {
       ...blueprint,

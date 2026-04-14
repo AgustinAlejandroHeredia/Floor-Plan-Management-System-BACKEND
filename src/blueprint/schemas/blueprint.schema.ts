@@ -45,6 +45,12 @@ export class Blueprint {
     @Prop({ required: false, type: Types.ObjectId, ref: 'Blueprint'})
     originalBlueprintId?: Types.ObjectId
 
+    @Prop({ required: false, type: Number })
+    width?: number
+
+    @Prop({ required: false, type: Number })
+    height?: number
+
 }
 
 export const BlueprintSchema = SchemaFactory.createForClass(Blueprint);

@@ -19,4 +19,12 @@ export class CreateBlueprintDto {
   @IsMongoId()
   originalBlueprintId?: string 
 
+  @IsOptional()
+  @IsNumber()
+  width?: number
+  
+  @IsOptional()
+  @IsNumber()
+  height?: number
+
 }
