@@ -1,46 +1,18 @@
-import { IsMongoId, IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsMongoId, IsString, IsOptional, IsEnum, IsObject } from 'class-validator';
 import { ProjectStatus } from 'src/common/status.enum';
 
 export class UpdateProjectDto {
 
   @IsString()
   @IsOptional()
-  projectName?: string;
-
-  @IsString()
-  @IsOptional()
-  record?: string;
-
-  @IsString()
-  @IsOptional()
-  address?: string;
-
-  @IsString()
-  @IsOptional()
-  scale?: string;
-
-  @IsString()
-  @IsOptional()
-  others?: string;
-
-  @IsString()
-  @IsOptional()
-  references?: string;
-
-  @IsString()
-  @IsOptional()
-  background?: string;
-
-  @IsString()
-  @IsOptional()
-  owner?: string;
-
-  @IsString()
-  @IsOptional()
-  tecnicalDirection?: string;
+  projectName?: string
   
   @IsOptional()
   @IsEnum(ProjectStatus)
-  status?: ProjectStatus;
+  status?: ProjectStatus
+
+  @IsOptional()
+  @IsObject()
+  customFields?: Record<string, any>
 
 }

@@ -22,7 +22,7 @@ export class ProjectService {
   // CREATE
   async create(
     dto: CreateProjectDto,
-    userId: string,
+    creatorUserId: string,
     organizationId: string,
   ): Promise<Project> {
 
@@ -30,8 +30,9 @@ export class ProjectService {
     const createdProject = new this.projectModel({
       ...dto,
       status: ProjectStatus.PENDING,
-      creatorUserId: new Types.ObjectId(userId),
+      creatorUserId: new Types.ObjectId(creatorUserId),
       organizationId: new Types.ObjectId(organizationId),
+      customFields: dto.customFields || {},
     });
 
     const savedProject = await createdProject.save();
@@ -40,7 +41,7 @@ export class ProjectService {
     try {
 
       await this.projectMembershipService.create({
-        userId: userId,
+        userId: creatorUserId,
         projectId: savedProject._id.toString(),
         projectRole: ProjectRole.CREATOR, // Se asigna como creador al que lo crea
         organizationId, // Para check

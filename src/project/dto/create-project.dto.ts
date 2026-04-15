@@ -1,38 +1,18 @@
-import { IsEnum, IsMongoId, IsString } from 'class-validator';
+import { IsEnum, IsMongoId, IsObject, IsOptional, IsString } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
 import { ProjectStatus } from 'src/common/status.enum';
 
 export class CreateProjectDto {
 
   @IsString()
-  projectName: string;
-
-  @IsString()
-  record: string;
-
-  @IsString()
-  address: string;
-
-  @IsString()
-  scale: string;
-
-  @IsString()
-  others: string;
-
-  @IsString()
-  references: string;
-
-  @IsString()
-  background: string;
-
-  @IsString()
-  owner: string;
-
-  @IsString()
-  technicalDirection: string;
+  projectName: string
 
   @IsMongoId()
-  organizationId: string;
+  organizationId: string
+
+  @IsOptional()
+  @IsObject()
+  customFields?: Record<string, any>
 
 }
 

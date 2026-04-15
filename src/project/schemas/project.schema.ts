@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, SchemaTypes, Types } from 'mongoose';
 import { ProjectStatus } from 'src/common/status.enum';
 
 export type ProjectDocument = Project & Document;
@@ -10,30 +10,6 @@ export class Project {
     // PROJECT NAME CAN BE REPEATED
     @Prop({ required: true, type: String, trim: true, maxlength: 100 })
     projectName: string
-
-    @Prop({ required: true, type: String, trim: true, maxlength: 50 })
-    record: string
-
-    @Prop({ required: true, type: String, trim: true, maxlength: 200 })
-    address: string
-
-    @Prop({ required: true, type: String, trim: true, maxlength: 50 })
-    scale: string
-
-    @Prop({ required: true, type: String, trim: true, maxlength: 100 })
-    others: string
-
-    @Prop({ required: true, type: String, trim: true, maxlength: 100 })
-    references: string
-
-    @Prop({ required: true, type: String, trim: true, maxlength: 100 })
-    background: string
-
-    @Prop({ required: true, type: String, trim: true, maxlength: 100 })
-    owner: string
-
-    @Prop({ required: true, type: String, trim: true, maxlength: 100 })
-    technicalDirection: string
 
     @Prop({ 
         required: true, 
@@ -48,6 +24,13 @@ export class Project {
 
     @Prop({ required: true, type: Types.ObjectId, ref: 'Organization' })
     organizationId: Types.ObjectId
+
+    @Prop({
+        type: Map,
+        of: SchemaTypes.Mixed,
+        default: {},
+    })
+    customFields: Map<string, any>
 
 }
 
