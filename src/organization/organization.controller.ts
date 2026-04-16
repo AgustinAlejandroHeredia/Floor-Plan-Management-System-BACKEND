@@ -13,7 +13,7 @@ import {
 
 import { OrganizationService } from './organization.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
-import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { UpdateOrganizationActionPermissionsDto, UpdateOrganizationDto } from './dto/update-organization.dto';
 import { JwtAuthGuard } from 'src/jwt/jwt-auth.guard';
 
 import {
@@ -94,6 +94,16 @@ export class OrganizationController {
     return this.organizationService.findOne(id);
   }
 
+  // GET ORGANIZATION ACTION PERMISSIONS
+  @Get('/actionPermissions/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get organization action permissions' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Organization action permissions obtained successfully' })
+  getOrganizationActionPermissions(@Param('id') id: string){
+    return this.organizationService.getOrganizationActionPermissions(id)
+  }
+
   // UPDATE
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
@@ -105,6 +115,22 @@ export class OrganizationController {
     @Body() dto: UpdateOrganizationDto,
   ) {
     return this.organizationService.update(id, dto);
+  }
+
+  // UPDATE ORGANIZATION ACTION PERMISSIONS
+  @Patch('actionPermissions/admin/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Update organization action permissions as admin' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Organization action permissions updated successfully' })
+  updateOrganizationActionPermissions(
+    @Param('id') id: string,
+    @Body() dto: UpdateOrganizationActionPermissionsDto,
+  ){
+    if(!dto.createPermission && !dto.invitePermission){
+      return
+    }
+    return this.organizationService.updateOrganizationActionPermissions(id, dto)
   }
 
   // ADD USER TO ORGANIZATION

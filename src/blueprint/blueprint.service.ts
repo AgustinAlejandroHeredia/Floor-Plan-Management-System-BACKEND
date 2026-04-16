@@ -293,8 +293,6 @@ export class BlueprintService {
       throw new BadRequestException('organizationIds is required');
     }
 
-    console.log("ORGANIZATION IDS LIST : ", idsArray);
-
     const objectIds = idsArray.map(
       (id) => new Types.ObjectId(id),
     );

@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTypes, Types } from 'mongoose';
+import { OrganizationActionPermission } from 'src/common/orgPermission.enum';
 import { ProjectStatus } from 'src/common/status.enum';
 
 export type ProjectDocument = Project & Document;

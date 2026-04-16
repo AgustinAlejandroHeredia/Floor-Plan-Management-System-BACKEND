@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
-import { IsString, Length, IsEmail, IsMongoId, IsNumber, IsInt, Min, Max } from 'class-validator';
+import { IsString, Length, IsEmail, IsMongoId, IsNumber, IsInt, Min, Max, IsEnum } from 'class-validator';
 import { MAX_BLUEPRINTS } from 'src/common/maximumBlueprintsCount';
+import { OrganizationActionPermission } from 'src/common/orgPermission.enum';
 
 export class CreateOrganizationDto {
 
@@ -32,5 +33,11 @@ export class CreateOrganizationDto {
   @Min(1)
   @Max(MAX_BLUEPRINTS)
   maxBlueprints: number
+
+  @IsEnum(OrganizationActionPermission)
+  createPermission: OrganizationActionPermission
+
+  @IsEnum(OrganizationActionPermission)
+  invitePermission: OrganizationActionPermission
 
 }

@@ -1,4 +1,4 @@
-import { IsMongoId, IsString, IsOptional, IsEnum, IsObject } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsObject } from 'class-validator';
 import { ProjectStatus } from 'src/common/status.enum';
 
 export class UpdateProjectDto {

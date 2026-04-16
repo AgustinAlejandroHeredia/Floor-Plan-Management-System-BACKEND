@@ -1,6 +1,5 @@
-import { IsEnum, IsMongoId, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsMongoId, IsObject, IsOptional, IsString } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
-import { ProjectStatus } from 'src/common/status.enum';
 
 export class CreateProjectDto {
 

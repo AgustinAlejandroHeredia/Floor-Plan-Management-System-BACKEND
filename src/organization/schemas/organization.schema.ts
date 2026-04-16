@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { MAX_BLUEPRINTS } from 'src/common/maximumBlueprintsCount';
+import { OrganizationActionPermission } from 'src/common/orgPermission.enum';
 
 export type OrganizationDocument = Organization & Document;
 
@@ -44,6 +45,20 @@ export class Organization {
         max: MAX_BLUEPRINTS,
     })
     maxBlueprints: number;
+
+    @Prop({
+        type: String,
+        enum: Object.values(OrganizationActionPermission),
+        default: OrganizationActionPermission.ADMINS,
+    })
+    createPermission: OrganizationActionPermission;
+
+    @Prop({
+        type: String,
+        enum: Object.values(OrganizationActionPermission),
+        default: OrganizationActionPermission.ADMINS,
+    })
+    invitePermission: OrganizationActionPermission;
 
 }
 

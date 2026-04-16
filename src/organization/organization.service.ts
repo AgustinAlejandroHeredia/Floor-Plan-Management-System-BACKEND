@@ -4,7 +4,7 @@ import { Model, Types } from 'mongoose';
 
 // DTOs
 import { CreateOrganizationDto } from './dto/create-organization.dto';
-import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { UpdateOrganizationActionPermissionsDto, UpdateOrganizationDto } from './dto/update-organization.dto';
 
 // SCHEMA
 import { Organization, OrganizationDocument } from './schemas/organization.schema';
@@ -14,6 +14,7 @@ import { OrganizationMembershipService } from 'src/organization_membership/organ
 import { OrganizationMembership } from 'src/organization_membership/schemas/organization_membership.schema';
 import { OrganizationRole } from 'src/common/role.enum';
 import { ProjectMembershipService } from 'src/project_membership/project_membership.service';
+import { OrganizationActionPermission } from 'src/common/orgPermission.enum';
 
 @Injectable()
 export class OrganizationService {
@@ -103,6 +104,22 @@ export class OrganizationService {
     return organization;
   }
 
+  async getOrganizationActionPermissions(id: string): Promise<({
+    createPermission: OrganizationActionPermission,
+    invitePermission: OrganizationActionPermission,
+  })> {
+    const organization = await this.organizationModel
+      .findById(new Types.ObjectId(id))
+      .lean()
+    if(!organization){
+      throw new Error("Organization not found")
+    }
+    return {
+      createPermission: organization.createPermission,
+      invitePermission: organization.invitePermission,
+    }
+  }
+
   // UPDATE
   async update(
     id: string,
@@ -157,7 +174,28 @@ export class OrganizationService {
 
       return updated;
     } catch (error: any) {
-      // Capturar errores de índice único que puedan saltar por alguna razón
+      if (error.code === 11000) {
+        throw new BadRequestException('Duplicate value for a unique field');
+      }
+      throw error;
+    }
+  }
+
+  async updateOrganizationActionPermissions(
+    id: string,
+    updatePermissionsDto: UpdateOrganizationActionPermissionsDto,
+  ): Promise<void> {
+    try {
+      const updated = await this.organizationModel.findByIdAndUpdate(
+        new Types.ObjectId(id),
+        updatePermissionsDto,
+        { new: true, runValidators: true }
+      )
+      if (!updated) {
+        throw new NotFoundException('Organization not found');
+      }
+      return 
+    } catch (error: any) {
       if (error.code === 11000) {
         throw new BadRequestException('Duplicate value for a unique field');
       }
