@@ -3,6 +3,15 @@ import { Document, Types } from 'mongoose';
 
 export type BlueprintDocument = Blueprint & Document;
 
+@Schema({ _id: false })
+export class CropMade {
+    @Prop({ required: true, type: Types.ObjectId, ref: 'Blueprint' })
+    blueprintId: Types.ObjectId;
+
+    @Prop({ required: true, type: String })
+    blueprintName: string;
+}
+
 @Schema()
 export class Blueprint {
 
@@ -50,6 +59,12 @@ export class Blueprint {
 
     @Prop({ required: false, type: Number })
     height?: number
+
+    @Prop({
+        type: [CropMade],
+        default: [],
+    })
+    cropsMade: CropMade[]
 
 }
 

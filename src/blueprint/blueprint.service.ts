@@ -86,7 +86,25 @@ export class BlueprintService {
         }),
       });
 
-      return await blueprint.save();
+      const savedBlueprint = await blueprint.save();
+
+      // updates original blueprint, crop was made from it
+      if(dto.originalBlueprintId) {
+        await this.blueprintModel.findByIdAndUpdate(
+          dto.originalBlueprintId,
+          {
+            $push: {
+              cropsMade: {
+                blueprintId: savedBlueprint._id,
+                blueprintName: savedBlueprint.blueprintName,
+              }
+            }
+          }
+        )
+      }
+
+      return savedBlueprint
+
     } catch (error) {
       console.log("ERROR : ", error)
       // rollback
@@ -181,26 +199,38 @@ export class BlueprintService {
       .findById(id, {
         storageId: 1,
         storageThumbnailId: 1,
+        originalBlueprintId: 1,
       })
-      .lean()
+      .lean();
 
     if (!blueprint) {
       throw new NotFoundException('Blueprint no encontrado');
     }
 
-    // db reg
+    // If this blueprint was a crop, remove from original blueprint
+    if (blueprint.originalBlueprintId) {
+      await this.blueprintModel.findByIdAndUpdate(
+        blueprint.originalBlueprintId,
+        {
+          $pull: {
+            cropsMade: {
+              blueprintId: new Types.ObjectId(id),
+            },
+          },
+        }
+      );
+    }
+
+    // delete mongo doc
     await this.blueprintModel.findByIdAndDelete(id);
 
-    // blueprints y thumbnails
+    // delete files
     const results = await Promise.allSettled([
       this.storageService.deleteFile(blueprint.storageId),
       this.storageService.deleteFile(blueprint.storageThumbnailId),
     ]);
 
     const failed = results.filter(r => r.status === 'rejected');
-    if (failed.length > 0) {
-      console.error(`Failed to delete ${failed.length} files for blueprint ${id}`);
-    }
 
     return {
       message: 'Blueprint eliminado correctamente',
