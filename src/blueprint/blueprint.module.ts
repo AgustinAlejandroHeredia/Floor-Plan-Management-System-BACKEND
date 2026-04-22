@@ -6,6 +6,7 @@ import { Blueprint, BlueprintSchema } from './schemas/blueprint.schema';
 import { FileStorageModule } from 'src/file-storage/file-storage.module';
 import { ThumbnailModule } from 'src/thumbnail/thumbnail.module';
 import { OrganizationModule } from 'src/organization/organization.module';
+import { ProjectModule } from 'src/project/project.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { OrganizationModule } from 'src/organization/organization.module';
     FileStorageModule,
     ThumbnailModule,
     OrganizationModule,
+    ProjectModule,
   ],
   controllers: [BlueprintController],
   providers: [BlueprintService],

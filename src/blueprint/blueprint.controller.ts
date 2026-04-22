@@ -33,7 +33,9 @@ import {
 @ApiBearerAuth('access-token')
 @Controller('blueprints')
 export class BlueprintController {
-  constructor(private readonly blueprintService: BlueprintService) {}
+  constructor(
+    private readonly blueprintService: BlueprintService,
+  ) {}
 
   // CREATE
   @Post()

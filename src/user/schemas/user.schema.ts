@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { UserRole } from 'src/common/role.enum';
+import { UserRole } from 'src/user/common/role.enum';
 
 export type UserDocument = User & Document;
 

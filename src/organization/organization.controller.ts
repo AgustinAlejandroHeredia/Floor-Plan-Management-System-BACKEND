@@ -24,7 +24,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
-import { OrganizationRole, UserRole } from 'src/common/role.enum';
+import { OrganizationRole, UserRole } from 'src/user/common/role.enum';
 import { UserRoles } from 'src/auth/decorators/user-roles.decorator';
 import { AccessGuard } from 'src/auth/guards/access.guard';
 

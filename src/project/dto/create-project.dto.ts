@@ -1,4 +1,4 @@
-import { IsMongoId, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsMongoId, IsObject, IsOptional, IsString } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
 
 export class CreateProjectDto {
@@ -8,6 +8,12 @@ export class CreateProjectDto {
 
   @IsMongoId()
   organizationId: string
+
+  @IsString()
+  levels: string
+
+  @IsBoolean()
+  basement: boolean
 
   @IsOptional()
   @IsObject()

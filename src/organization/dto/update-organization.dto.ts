@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsString, IsOptional, Length, IsEmail, IsInt, Max, Min, IsEnum } from 'class-validator';
-import { MAX_BLUEPRINTS } from 'src/common/maximumBlueprintsCount';
-import { OrganizationActionPermission } from 'src/common/orgPermission.enum';
+import { MAX_BLUEPRINTS } from 'src/organization/common/maximumBlueprintsCount';
+import { OrganizationActionPermission } from 'src/organization/common/orgPermission.enum';
 
 export class UpdateOrganizationDto {
 

@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTypes, Types } from 'mongoose';
-import { OrganizationActionPermission } from 'src/common/orgPermission.enum';
-import { ProjectStatus } from 'src/common/status.enum';
+import { OrganizationActionPermission } from 'src/organization/common/orgPermission.enum';
+import { ProjectStatus } from 'src/project/common/status.enum';
 
 export type ProjectDocument = Project & Document;
 
@@ -25,6 +25,19 @@ export class Project {
 
     @Prop({ required: true, type: Types.ObjectId, ref: 'Organization' })
     organizationId: Types.ObjectId
+
+    @Prop({ 
+        required: true,
+        default: "1",
+    })
+    levels: string
+
+    @Prop({
+        required: true,
+        default: false,
+    })
+    basement: boolean
+
 
     @Prop({
         type: Map,

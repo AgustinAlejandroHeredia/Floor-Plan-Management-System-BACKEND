@@ -10,12 +10,12 @@ import {
 } from '@nestjs/swagger';
 
 import { AccessGuard } from 'src/auth/guards/access.guard';
-import { OrganizationRole } from 'src/common/role.enum';
+import { OrganizationRole } from 'src/user/common/role.enum';
 import { OrganizationRoles } from 'src/auth/decorators/organization-roles.decorator';
 
 @ApiTags('DeleteProject')
 @ApiBearerAuth('access-token')
-@Controller('deleterpoject')
+@Controller('deleteproject')
 export class DeleteProjectController {
 
     constructor(

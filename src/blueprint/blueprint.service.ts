@@ -12,6 +12,7 @@ import { UpdateBlueprintDto } from './dto/update-blueprint.dto';
 import { FileStorageService, StoredFile } from 'src/file-storage/file-storage.service';
 import { ThumbnailService } from 'src/thumbnail/thumbnail.service';
 import { OrganizationService } from 'src/organization/organization.service';
+import { ProjectService } from 'src/project/project.service';
 
 import { randomUUID } from "crypto";
 import axios from 'axios';
@@ -23,7 +24,8 @@ export class BlueprintService {
     private blueprintModel: Model<BlueprintDocument>,
     private readonly storageService: FileStorageService,
     private readonly thumbnailService: ThumbnailService,
-    private readonly organizationService: OrganizationService
+    private readonly organizationService: OrganizationService,
+    private readonly projectService: ProjectService,
   ) {}
 
   // CREATE (upload + mongo)
@@ -124,7 +126,9 @@ export class BlueprintService {
 
   // GET ONE (mongo + backblaze)
   async findOne(id: string) {
-    const blueprint = await this.blueprintModel.findById(id).lean();
+    const blueprint = await this.blueprintModel
+      .findById(id, {titleBlock: 0})
+      .lean();
 
     if (!blueprint) {
       throw new NotFoundException('Blueprint no encontrado');
@@ -133,6 +137,13 @@ export class BlueprintService {
     const downloadUrl = await this.storageService.getSignedDownloadUrl(
       blueprint.filename,
     )
+
+    const project = await this.projectService.findOne(blueprint.projectId.toString());
+
+    const projectFields = {
+      levels: project?.levels,
+      basement: project?.basement,
+    }
 
     if(blueprint.originalBlueprintId){
       const originalBlueprintName = (await this.blueprintModel
@@ -152,6 +163,7 @@ export class BlueprintService {
 
     return {
       ...blueprint,
+      projectFields,
       downloadUrl,
     };
   }

@@ -1,5 +1,5 @@
 import { IsEnum, IsMongoId, IsOptional } from 'class-validator';
-import { ProjectRole } from 'src/common/role.enum';
+import { ProjectRole } from 'src/user/common/role.enum';
 
 export class UpdateProjectMembershipDto {
 

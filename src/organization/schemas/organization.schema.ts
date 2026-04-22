@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { MAX_BLUEPRINTS } from 'src/common/maximumBlueprintsCount';
-import { OrganizationActionPermission } from 'src/common/orgPermission.enum';
+import { MAX_BLUEPRINTS } from 'src/organization/common/maximumBlueprintsCount';
+import { OrganizationActionPermission } from 'src/organization/common/orgPermission.enum';
 
 export type OrganizationDocument = Organization & Document;
 

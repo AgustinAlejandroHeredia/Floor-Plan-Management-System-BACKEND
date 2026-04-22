@@ -1,5 +1,5 @@
-import { IsString, IsOptional, IsEnum, IsObject } from 'class-validator';
-import { ProjectStatus } from 'src/common/status.enum';
+import { IsString, IsOptional, IsEnum, IsObject, IsBoolean } from 'class-validator';
+import { ProjectStatus } from 'src/project/common/status.enum';
 
 export class UpdateProjectDto {
 
@@ -10,6 +10,14 @@ export class UpdateProjectDto {
   @IsOptional()
   @IsEnum(ProjectStatus)
   status?: ProjectStatus
+
+  @IsOptional()
+  @IsString()
+  levels?: string
+
+  @IsOptional()
+  @IsBoolean()
+  basement?: boolean
 
   @IsOptional()
   @IsObject()

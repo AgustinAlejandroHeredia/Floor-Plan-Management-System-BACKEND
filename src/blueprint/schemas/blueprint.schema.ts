@@ -1,15 +1,34 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import { SpecialtyTag, BlueprintLabel, BlueprintView } from '../common/blueprintLabel';
 
 export type BlueprintDocument = Blueprint & Document;
 
 @Schema({ _id: false })
+export class SectionView {
+    @Prop({ required: true, type: String })
+    name: string
+
+    @Prop({ required: true, type: Number })
+    x: number
+
+    @Prop({ required: true, type: Number })
+    y: number
+
+    @Prop({ required: true, type: Number })
+    width: number
+
+    @Prop({ required: true, type: Number })
+    height: number
+}
+
+@Schema({ _id: false })
 export class CropMade {
     @Prop({ required: true, type: Types.ObjectId, ref: 'Blueprint' })
-    blueprintId: Types.ObjectId;
+    blueprintId: Types.ObjectId
 
     @Prop({ required: true, type: String })
-    blueprintName: string;
+    blueprintName: string
 }
 
 @Schema()
@@ -45,8 +64,39 @@ export class Blueprint {
     @Prop({ required: true, type: Date, default: Date.now, index: true})
     creationDate: Date
 
-    @Prop({ required: true, type: [String] })
-    tags: string[]
+    // MARKED AREAS BY AI
+    @Prop({
+        type: [SectionView],
+        default: [],
+    })
+    sectionViews: SectionView[];
+
+    @Prop({
+        type: [String],
+        enum: SpecialtyTag,
+        default: [],
+    })
+    specialties: SpecialtyTag[];
+
+    @Prop({
+        type: [String],
+        default: [],
+    })
+    levels: string[];
+
+    @Prop({
+        type: String,
+        enum: BlueprintView,
+        required: false,
+        default: BlueprintView.UNDEFINED
+    })
+    view?: BlueprintView;
+
+    @Prop({
+        type: [String],
+        default: [],
+    })
+    titleBlock: string[]
 
     @Prop({ required: true, type: Types.ObjectId, ref: 'User', index: true })
     uploadedBy: Types.ObjectId

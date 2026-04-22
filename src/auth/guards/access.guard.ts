@@ -24,7 +24,7 @@ import {
   OrganizationRole,
   ProjectRole,
   UserRole,
-} from 'src/common/role.enum';
+} from 'src/user/common/role.enum';
 
 // Decorator keys
 import {

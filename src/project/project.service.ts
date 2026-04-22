@@ -5,8 +5,8 @@ import { Project, ProjectDocument } from './schemas/project.schema';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ProjectMembershipService } from 'src/project_membership/project_membership.service';
-import { ProjectRole } from 'src/common/role.enum';
-import { ProjectStatus } from 'src/common/status.enum';
+import { ProjectRole } from 'src/user/common/role.enum';
+import { ProjectStatus } from 'src/project/common/status.enum';
 
 @Injectable()
 export class ProjectService {

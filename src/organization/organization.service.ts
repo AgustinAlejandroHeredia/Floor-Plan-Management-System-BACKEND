@@ -12,9 +12,9 @@ import { Organization, OrganizationDocument } from './schemas/organization.schem
 // RELATIONS
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 import { OrganizationMembership } from 'src/organization_membership/schemas/organization_membership.schema';
-import { OrganizationRole } from 'src/common/role.enum';
+import { OrganizationRole } from 'src/user/common/role.enum';
 import { ProjectMembershipService } from 'src/project_membership/project_membership.service';
-import { OrganizationActionPermission } from 'src/common/orgPermission.enum';
+import { OrganizationActionPermission } from 'src/organization/common/orgPermission.enum';
 
 @Injectable()
 export class OrganizationService {

@@ -16,7 +16,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { JwtAuthGuard } from 'src/jwt/jwt-auth.guard';
 
-import { ProjectStatus } from 'src/common/status.enum';
+import { ProjectStatus } from 'src/project/common/status.enum';
 
 import {
   ApiTags,
@@ -26,7 +26,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
-import { ProjectRole } from 'src/common/role.enum';
+import { ProjectRole } from 'src/user/common/role.enum';
 
 @ApiTags('Projects')
 @ApiBearerAuth('access-token')

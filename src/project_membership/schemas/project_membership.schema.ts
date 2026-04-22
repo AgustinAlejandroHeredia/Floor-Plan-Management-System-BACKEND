@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { ProjectRole } from 'src/common/role.enum';
+import { ProjectRole } from 'src/user/common/role.enum';
 
 export type ProjectMembershipDocument = ProjectMembership & Document;
 
