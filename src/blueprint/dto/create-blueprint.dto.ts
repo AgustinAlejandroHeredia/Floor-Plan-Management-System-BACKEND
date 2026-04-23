@@ -1,9 +1,10 @@
 import { IsArray, IsEnum, IsMongoId, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { SpecialtyTag, BlueprintLabel, BlueprintView } from '../common/blueprintLabel';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class SectionViewDto {
   @IsString()
+  @Transform(({ value }) => value?.trim())
   name: string;
 
   @IsNumber()
@@ -22,6 +23,7 @@ export class SectionViewDto {
 export class CreateBlueprintDto {
 
   @IsString()
+  @Transform(({ value }) => value?.trim())
   blueprintName: string;
 
   @IsMongoId()

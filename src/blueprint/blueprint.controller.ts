@@ -121,6 +121,7 @@ export class BlueprintController {
     @Param('id') id: string,
     @Body() dto: UpdateBlueprintDto,
   ) {
+    console.log("TESTEO DE TIPO : ", dto instanceof UpdateBlueprintDto)
     return this.blueprintService.update(id, dto);
   }
 

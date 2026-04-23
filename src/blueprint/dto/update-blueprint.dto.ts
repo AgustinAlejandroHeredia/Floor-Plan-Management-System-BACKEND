@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsString, IsOptional, IsArray, ValidateNested, IsEnum } from 'class-validator';
 import { CropMadeDto } from './crop-made.dto';
 import { SpecialtyTag, BlueprintLabel, BlueprintView } from '../common/blueprintLabel';
@@ -8,6 +8,7 @@ export class UpdateBlueprintDto {
 
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => value?.trim())
   blueprintName?: string;
 
   // NEW TAGS

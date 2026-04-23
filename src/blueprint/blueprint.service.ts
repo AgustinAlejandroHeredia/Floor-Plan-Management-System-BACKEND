@@ -144,6 +144,13 @@ export class BlueprintService {
       levels: project?.levels,
       basement: project?.basement,
     }
+    console.log("PROJECT FIELDS OBTAINED : ", projectFields)
+
+    const responseData: any = {
+      ...blueprint,
+      projectFields,
+      downloadUrl,
+    }
 
     if(blueprint.originalBlueprintId){
       const originalBlueprintName = (await this.blueprintModel
@@ -154,18 +161,10 @@ export class BlueprintService {
         .lean()
       )?.blueprintName
 
-      return {
-        ...blueprint,
-        downloadUrl,
-        croppedFrom: originalBlueprintName,
-      }
+      responseData.croppedFrom = originalBlueprintName
     }
 
-    return {
-      ...blueprint,
-      projectFields,
-      downloadUrl,
-    };
+    return responseData
   }
 
   // GET all thumbnails by project

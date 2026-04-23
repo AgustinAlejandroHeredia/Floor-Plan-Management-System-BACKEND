@@ -1,9 +1,11 @@
 import { IsBoolean, IsMongoId, IsObject, IsOptional, IsString } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
+import { Transform } from 'class-transformer';
 
 export class CreateProjectDto {
 
   @IsString()
+  @Transform(({ value }) => value?.trim())
   projectName: string
 
   @IsMongoId()
