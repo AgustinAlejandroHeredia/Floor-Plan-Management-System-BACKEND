@@ -231,15 +231,22 @@ export class OrganizationService {
   async addUserToOrganization(
     organizationId: string,
     userId: string,
+    organizationRole?: OrganizationRole,
   ): Promise<OrganizationMembership> {
 
-    // verificar que la org exista
+    // ORG EXISTS?
     await this.findOne(organizationId);
+
+    // DEFAILT : MEMBER
+    let role = OrganizationRole.MEMBER
+    if(organizationRole) {
+      role = organizationRole
+    }
 
     return this.organizationMembershipService.create({
       userId,
       organizationId,
-      organizationRole: OrganizationRole.MEMBER,
+      organizationRole: role,
     });
   }
 
@@ -250,17 +257,25 @@ export class OrganizationService {
     userId: string,
   ): Promise<void> {
 
+    console.log("REMOVING USER ", userId, " FROM THE ORGANIZATION ", organizationId)
+
     // verificar que la org exista
-    await this.findOne(organizationId);
+    await this.organizationModel.findOne(new Types.ObjectId(organizationId));
+    console.log("ORGANIZATION EXISTS")
 
     // expulsa al user de todos los proyectos de esa organizacion
+    
+    /* POR AHORA NO SE USA EL PROJECTMEMBERSHIP
     await this.projectMembershipService.deleteFromAllProjectsInOrganization(userId, organizationId)
+    console.log("USER KICKED FROM PROJECTS")
+    */
 
     // expulsa al user de la organizacion
     await this.organizationMembershipService.deleteByUserAndOrganization(
       userId,
       organizationId,
-    );
+    )
+    console.log("USER KICKED FROM ORGANIZATION")
   }
 
 

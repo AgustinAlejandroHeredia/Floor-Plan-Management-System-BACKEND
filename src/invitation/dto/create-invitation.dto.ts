@@ -1,18 +1,23 @@
-import { IsMongoId, IsNumber, IsString, IsOptional } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsMongoId, IsNumber, IsString, IsOptional, IsEmail, IsEnum } from 'class-validator';
+import { OrganizationRole } from 'src/user/common/role.enum';
 
 export class CreateInvitationDto {
 
   @IsMongoId()
-  userID: string;
-
-  @IsMongoId()
-  organizationId: string;
-
-  @IsNumber()
-  @IsOptional()
-  duration?: number;
+  organizationId: string
 
   @IsString()
-  accessCode: string;
+  @IsEmail()
+  @Transform(({ value }) => value?.trim())
+  userEmail: string
+
+  @IsOptional()
+  @IsNumber()
+  duration?: number
+
+  @IsOptional()
+  @IsEnum(OrganizationRole)
+  userOrganizationRole: OrganizationRole
 
 }

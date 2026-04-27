@@ -147,11 +147,13 @@ export class ProjectMembershipService {
       organizationId: new Types.ObjectId(organizationId),
     });
 
+    /*
     if (result.deletedCount === 0) {
       throw new NotFoundException(
-        'No memberships found for this user in the specified organization',
+        'No project memberships found for this user in the specified organization',
       );
     }
+    */
   }
 
   // EXISTS CHECK

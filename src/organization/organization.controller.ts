@@ -26,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { OrganizationRole, UserRole } from 'src/user/common/role.enum';
 import { UserRoles } from 'src/auth/decorators/user-roles.decorator';
+import { OrganizationRoles } from 'src/auth/decorators/organization-roles.decorator';
 import { AccessGuard } from 'src/auth/guards/access.guard';
 
 @ApiTags('Organizations')
@@ -134,17 +135,31 @@ export class OrganizationController {
   }
 
   // ADD USER TO ORGANIZATION
-  @Post('addUser/:organizationId')
+  @Post('addUser/:organizationId/:userId')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Adds user to this organization' })
   @ApiParam({ name: 'userId', type: String })
   @ApiParam({ name: 'organizationId', type: String })
+  @ApiBody({
+    required: false,
+    schema: {
+      type: 'object',
+      properties: {
+        organizationRole: {
+          type: 'string',
+          enum: ['admin', 'member'],
+          example: 'member',
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 200, description: 'User added successfully' })
   addUser(
-    @Param('userId') userId: string,
     @Param('organizationId') organizationId: string,
+    @Param('userId') userId: string,
+    @Body('organizationRole') organizationRole?: OrganizationRole,
   ){
-    return this.organizationService.addUserToOrganization(organizationId, userId)
+    return this.organizationService.addUserToOrganization(organizationId, userId, organizationRole)
   }
 
   // GET MY ORGANIZATIONS
@@ -173,7 +188,8 @@ export class OrganizationController {
 
   // UPDATE USER ROLE
   @Patch('membership/:organizationId/:userId/role')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @OrganizationRoles(OrganizationRole.ADMIN)
   @ApiOperation({ summary: 'Change the role of a user in a organization' })
   @ApiParam({ name: 'organizationId', type: String })
   @ApiParam({ name: 'userId', type: String })
@@ -194,8 +210,9 @@ export class OrganizationController {
   }
 
   // REMOVE USER FROM ORGANIZATION
-  @Delete('user/:userId/:organizationId')
-  @UseGuards(JwtAuthGuard)
+  @Delete('/user/:userId/:organizationId')
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @OrganizationRoles(OrganizationRole.ADMIN)
   @ApiOperation({ summary: 'Delete user from organization' })
   @ApiParam({ name: 'userId', type: String })
   @ApiParam({ name: 'organizationId', type: String })
@@ -205,6 +222,20 @@ export class OrganizationController {
     @Param('organizationId') organizationId: string,
   ){
     return this.organizationService.removeUserFromOrganization(organizationId, userId)
+  }
+
+  // REMOVE SELF FROM ORGANIZATION
+  @Delete('/me/:organizationId')
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @OrganizationRoles(OrganizationRole.MEMBER)
+  @ApiOperation({ summary: 'Delete self from organization' })
+  @ApiParam({ name: 'organizationId', type: String })
+  @ApiResponse({ status: 200, description: 'User deleted from organization successfully' })
+  leaveOrganization(
+    @Req() req,
+    @Param('organizationId') organizationId: string,
+  ){
+    return this.organizationService.removeUserFromOrganization(organizationId, req.user.internalId)
   }
 
 }
