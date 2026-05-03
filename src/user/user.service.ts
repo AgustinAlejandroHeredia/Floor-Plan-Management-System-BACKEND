@@ -201,4 +201,8 @@ export class UserService {
     return user;
   }
 
+  async getUserProfile(){
+    
+  }
+
 }

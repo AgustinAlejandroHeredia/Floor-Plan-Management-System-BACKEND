@@ -173,6 +173,17 @@ export class OrganizationController {
     return this.organizationService.getMyOrganizations(req.user.internalId)
   }
 
+  // GET MY ORGANIZATIONS WITH ROLES
+  @Get('me/organizationsAndRoles')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get all my organizations and it roles' })
+  @ApiResponse({ status: 200, description: 'All my organizations obtained successfully' })
+  getMyOrganizationWithRoles(
+    @Req() req,
+  ){
+    return this.organizationService.getMyOrganizationsAndRoles(req.user.internalId)
+  }
+
   // GET MY ORGANIZATION ROLE
   @Get('me/role/:organizationId')
   @UseGuards(JwtAuthGuard)

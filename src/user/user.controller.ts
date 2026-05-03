@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, Headers, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -34,7 +34,6 @@ export class UserController {
     return this.userService.remove(id);
   }
 
-  //@UseGuards(JwtAuthGuard)
   @UseGuards(JwtAuthGuard, AccessGuard)
   @UserRoles(UserRole.NONE)
   @Get('userInfo')
@@ -43,6 +42,15 @@ export class UserController {
   ){
     const { internalId, ...userWithoutInternalId } = req.user;
     return userWithoutInternalId;
+  }
+
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UserRoles(UserRole.NONE)
+  @Get('myProfile')
+  async getMyProfile(
+    @Req() req,
+  ){
+    return await this.userService.findOne(req.user.internalId)
   }
 
   @UseGuards(JwtAuthGuard)
@@ -65,6 +73,16 @@ export class UserController {
   @Get('allUsers/superadmin')
   async getAllUsersAsSuperadmin(){
     return await this.userService.findAll()
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  async getUserProfile(
+    @Req() req,
+    @Query('userId') userId?: string,
+  ){
+    const targetUserId = userId ?? req.user.internalId
+    return await this.userService.getUserProfile()
   }
 
 }

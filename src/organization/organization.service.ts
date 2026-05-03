@@ -15,6 +15,7 @@ import { OrganizationMembership } from 'src/organization_membership/schemas/orga
 import { OrganizationRole } from 'src/user/common/role.enum';
 import { ProjectMembershipService } from 'src/project_membership/project_membership.service';
 import { OrganizationActionPermission } from 'src/organization/common/orgPermission.enum';
+import { OrganizationWithRoles } from './common/types';
 
 @Injectable()
 export class OrganizationService {
@@ -217,13 +218,42 @@ export class OrganizationService {
   // GET MY ORGANIZATIONS
   async getMyOrganizations(userId: string): Promise<Organization[]> {
 
-    const memberships = await this.organizationMembershipService.findByUserId(userId);
+    const memberships = await this.organizationMembershipService.findByUserId(userId)
 
-    const organizationIds = memberships.map(m => m.organizationId);
+    const organizationIds = memberships.map(m => m.organizationId)
 
     return this.organizationModel.find({
       _id: { $in: organizationIds },
-    });
+    })
+  }
+
+  async getMyOrganizationsAndRoles(
+    userId: string,
+  ): Promise<OrganizationWithRoles[]> {
+
+    const memberships = await this.organizationMembershipService.findByUserId(userId)
+
+    const organizationIds = memberships.map((m) => m.organizationId)
+
+    const organizations = await this.organizationModel.find({
+      _id: { $in: organizationIds },
+    })
+
+    return memberships
+      .map((membership) => {
+        const organization = organizations.find(
+          (org) =>
+            org._id.toString() === membership.organizationId.toString(),
+        );
+
+        if (!organization) return null
+
+        return {
+          organization,
+          role: membership.organizationRole,
+        }
+      })
+      .filter(Boolean) as OrganizationWithRoles[]
   }
 
 
