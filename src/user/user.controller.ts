@@ -82,7 +82,7 @@ export class UserController {
     @Query('userId') userId?: string,
   ){
     const targetUserId = userId ?? req.user.internalId
-    return await this.userService.getUserProfile()
+    return await this.userService.findOne(targetUserId)
   }
 
 }

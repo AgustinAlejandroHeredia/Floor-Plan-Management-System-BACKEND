@@ -311,24 +311,30 @@ export class OrganizationService {
 
   // CHANGE USER ROLE
   async changeUserRole(
-    organizationId: string,
     userId: string,
-    role: OrganizationRole,
+    organizationId: string,
   ): Promise<OrganizationMembership> {
 
     // verificar que exista la membership
     const membership = await this.organizationMembershipService.findByUserIdAndOrganizationId(
       userId,
       organizationId,
-    );
+    )
 
     if (!membership) {
       throw new NotFoundException('Membership not found');
     }
 
+    let currentRole
+    if(membership.organizationRole === "member") {
+      currentRole = "admin"
+    } else {
+      currentRole = "member"
+    }
+
     return this.organizationMembershipService.updateRole(
       membership._id.toString(),
-      { organizationRole: role },
+      { organizationRole: currentRole },
     );
   }
 

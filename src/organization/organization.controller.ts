@@ -198,26 +198,18 @@ export class OrganizationController {
   }
 
   // UPDATE USER ROLE
-  @Patch('membership/:organizationId/:userId/role')
+  @Patch('/membership/:organizationId/:userId/role')
   @UseGuards(JwtAuthGuard, AccessGuard)
   @OrganizationRoles(OrganizationRole.ADMIN)
   @ApiOperation({ summary: 'Change the role of a user in a organization' })
   @ApiParam({ name: 'organizationId', type: String })
   @ApiParam({ name: 'userId', type: String })
-  @ApiParam({ name: 'newOrganizationRole', type: String })
   @ApiResponse({ status: 200, description: 'Organization membership role updated successfully' })
   changeUserRole(
-    @Param('organizationId') projectId: string,
+    @Param('organizationId') organizationId: string,
     @Param('userId') userId: string,
-    @Body('newOrganizationRole') newOrganizationRole: OrganizationRole,
   ) {
-    if (!Object.values(OrganizationRole).includes(newOrganizationRole as OrganizationRole)) {
-      throw new BadRequestException(
-        `Invalid project role. Must be one of: ${Object.values(OrganizationRole).join(', ')}`,
-      );
-    }
-
-    return this.organizationService.changeUserRole(userId, projectId, newOrganizationRole);
+    return this.organizationService.changeUserRole(userId, organizationId);
   }
 
   // REMOVE USER FROM ORGANIZATION
