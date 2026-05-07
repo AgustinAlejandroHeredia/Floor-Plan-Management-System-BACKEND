@@ -7,6 +7,7 @@ import { FileStorageModule } from 'src/file-storage/file-storage.module';
 import { ThumbnailModule } from 'src/thumbnail/thumbnail.module';
 import { OrganizationModule } from 'src/organization/organization.module';
 import { ProjectModule } from 'src/project/project.module';
+import { InferenceJobModule } from 'src/inference-job/inference-job.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ProjectModule } from 'src/project/project.module';
     ThumbnailModule,
     OrganizationModule,
     ProjectModule,
+    InferenceJobModule,
   ],
   controllers: [BlueprintController],
   providers: [BlueprintService],

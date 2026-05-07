@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BlueprintService } from './blueprint.service';
+import { InferenceJobService } from 'src/inference-job/inference-job.service';
 import { CreateBlueprintDto } from './dto/create-blueprint.dto';
 import { UpdateBlueprintDto } from './dto/update-blueprint.dto';
 import { JwtAuthGuard } from 'src/jwt/jwt-auth.guard';
@@ -35,6 +36,7 @@ import {
 export class BlueprintController {
   constructor(
     private readonly blueprintService: BlueprintService,
+    private readonly inferenceJobService: InferenceJobService,
   ) {}
 
   // CREATE
@@ -79,6 +81,16 @@ export class BlueprintController {
       dto,
       req.user.internalId,
     );
+  }
+
+  // GET latest processed inference job for a blueprint
+  @Get(':blueprintId/inference-jobs/latest')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get the latest processed inference job for a blueprint' })
+  @ApiParam({ name: 'blueprintId', type: String })
+  @ApiResponse({ status: 200, description: 'Latest processed inference job, or null' })
+  getLatestInferenceJob(@Param('blueprintId') blueprintId: string) {
+    return this.inferenceJobService.findLatestProcessedForBlueprint(blueprintId);
   }
 
   // GET ONE

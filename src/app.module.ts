@@ -18,6 +18,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { DeleteOrganizationModule } from './use-cases/organization/delete-organization/delete_organization.module';
 import { DeleteProjectModule } from './use-cases/project/delete-project/delete_project.module';
 import { AiProcessingModule } from './ai-processing/ai-processing.module';
+import { InferenceJobModule } from './inference-job/inference-job.module';
 
 @Module({
   imports: [
@@ -56,7 +57,9 @@ import { AiProcessingModule } from './ai-processing/ai-processing.module';
     DeleteProjectModule,
 
     AiProcessingModule,
-    
+
+    InferenceJobModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],

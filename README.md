@@ -1,30 +1,43 @@
-// FOR FRONTEND AND BACKEND
+# Backend setup
 
-1 npm install
+## Prerequisites
 
-2 Create Auth0 SPA aplication on Applications/Applications, setting "Allowed Callback URLs" your frontend base url and frontend url with slash, same thing for "Allowed Logout URLs" and "Allowed Web Origins"
+- Node.js, npm
+- Auth0 account
+- MongoDB Atlas account
+- Backblaze B2 account
 
-3 Create Auth0 API on Application/APIs and grant acces to the SPA aplication on this API / "Aplication access". Your SPA aplication must appear as "AUTHORIZED"
+## Auth0
 
-4 On your API go to Settings and scroll down to reach the "Application Access Policy" section and set "Allow via client-grant" on "User Access" and "Client Access"
+1. Create an **SPA application** — set Allowed Callback URLs, Logout URLs, and Web Origins to your frontend URL.
+2. Create an **API** — authorize the SPA application under *Application Access*.  
+   In the API settings → *Application Access Policy*, set both User Access and Client Access to **Allow via client-grant**.
+3. Create an **M2M application** — authorize it on your API (Client Access) and on the Auth0 Management API (User Access).
 
-5 Once SPA aplication an API is created, use the information provided to complete the .env as the .env.example specifies
+## Infrastructure
 
-// FOR BACKEND
+4. **MongoDB Atlas** — create a cluster, connect via the Node.js driver URI, and add it to `.env`.
+5. **Backblaze B2** — create a bucket and an application key, and add both to `.env`.
 
-6 Create Auth0 M2M (machine to machine) application on Applications/Applications
+## Python (inference script)
 
-7 On your M2M application go to "APIs" and your API must appear as "Client Access" AUTHORIZED and Auth0 Management API "User Access" as AUTHORIZED
+The AI inference step runs `scripts/yolo_inference.py`. Dependencies are declared in `pyproject.toml` (requires Python ≥ 3.13).
 
-8 Go to your API, "Application Access" and grant access to your M2M application for Client Access, must appear as AUTHORIZED
+```bash
+uv sync
 
-9 Make sure that on your Auth0 Management API on Appplication/APIs, on "Application Access" section your SPA application and M2M application has "User Access" as AUTHORIZED
+```
 
-10 Create a Mongo Atlas account, once done go to "Clusters", select "Connect", select "Drivers", select Driver Node.js and use the link given to connect your project to the database. For example: mongodb+srv://User:Pasword@clustername.1rvm4.mongodb.net/DatabaseName?retryWrites=true&w=majority
+Set `PYTHON_EXECUTABLE` in `.env` to the path of the virtualenv Python if it differs from `python3` (e.g. `.venv/bin/python`).
 
-11 Create a Backblaze account, once done create a new bucket for your project and an application key, saving the information of both. Use it to complete the .env as the .env.example specifies
+## Environment
 
-// RUN PROJECT
+Copy `.env.example` to `.env` and fill in all values.
 
-12 Run the project with "npm run start"
+## Run
 
+```bash
+npm install
+npm run start:dev   # development (watch mode)
+npm run start       # production
+```
