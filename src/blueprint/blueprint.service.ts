@@ -16,6 +16,7 @@ import { ProjectService } from 'src/project/project.service';
 
 import { randomUUID } from "crypto";
 import axios from 'axios';
+import { UpdateSectionViewsDto } from './dto/update-section-views';
 
 @Injectable()
 export class BlueprintService {
@@ -426,5 +427,28 @@ export class BlueprintService {
       .lean()
 
     return results.map(s => s.storageId)
+  }
+
+  async updateSectionViews(
+    blueprintId: string,
+    dto: UpdateSectionViewsDto,
+  ): Promise<BlueprintDocument> {
+
+    const blueprint =
+      await this.blueprintModel.findByIdAndUpdate(
+        new Types.ObjectId(blueprintId),
+        {
+          sectionViews: dto.sectionViews,
+        },
+        {
+          new: true,
+        },
+      );
+
+    if (!blueprint) {
+      throw new NotFoundException('Blueprint not found');
+    }
+
+    return blueprint;
   }
 }

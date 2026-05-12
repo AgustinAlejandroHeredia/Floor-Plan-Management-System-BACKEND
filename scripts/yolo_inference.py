@@ -29,7 +29,12 @@ def main():
         from sahi import AutoDetectionModel
         from sahi.predict import get_sliced_prediction
     except ImportError:
-        print(json.dumps({"error": "sahi package is not installed. Run: pip install sahi"}))
+        print(
+            json.dumps({
+                "error": "sahi package is not installed. Run: pip install sahi"
+            }),
+            file=sys.stderr
+        )
         sys.exit(1)
 
     try:
@@ -80,7 +85,7 @@ def main():
         print("<predictions>" + json.dumps({"predictions": predictions}) + "</predictions>")
 
     except Exception as e:
-        print(json.dumps({"error": str(e)}))
+        print(json.dumps({"error": str(e)}), file=sys.stderr)
         sys.exit(1)
 
 

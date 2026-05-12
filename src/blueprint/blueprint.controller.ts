@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   Patch,
   Res,
+  NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BlueprintService } from './blueprint.service';
@@ -29,6 +30,7 @@ import {
   ApiBody,
   ApiParam,
 } from '@nestjs/swagger';
+import { UpdateSectionViewsDto } from './dto/update-section-views';
 
 @ApiTags('Blueprints')
 @ApiBearerAuth('access-token')
@@ -208,6 +210,27 @@ export class BlueprintController {
     @Param('organizationIds') organizationIds: string[],
   ){
     return await this.blueprintService.getBlueprintCountsByOrganizationIds(organizationIds)
+  }
+
+  @Patch(':id/section-views')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Updates the section view list. Adds all the new elements and the already existing ones' })
+  @ApiParam({ name: 'blueprintId', type: String })
+  async updateSectionViews(
+    @Param('id') blueprintId: string,
+    @Body() dto: UpdateSectionViewsDto,
+  ) {
+    const blueprint =
+      await this.blueprintService.updateSectionViews(
+        blueprintId,
+        dto,
+      );
+
+    if (!blueprint) {
+      throw new NotFoundException('Blueprint not found');
+    }
+
+    return blueprint;
   }
 
 }
