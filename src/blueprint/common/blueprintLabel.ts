@@ -20,6 +20,7 @@ export enum BlueprintLabel {
 }
 
 export enum BlueprintView {
+  TOP = 'top',
   FRONT = 'front',
   REAR = 'rear',
   LEFT = 'left',
