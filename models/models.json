@@ -28,6 +28,7 @@
           "Box": 0.7165,
           "Mask": 0.5053
         },
+        },
       "trained by": "Santiago Dos Santos",
       "drive_id": "1giC8oQ2-tivH9yFz89fltDvE39drQpLt",
       "config": {
@@ -63,7 +64,7 @@
         "mAP50-95": {
           "Box": 0.6800,
           "Mask": 0.5995
-        },
+        },},
       "trained by": "Santiago Dos Santos",
       "drive_id": "1dLwYsTygfJHGWLQkRHRcXKH9drPmyu_d",
       "config": {
