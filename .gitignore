@@ -2,7 +2,7 @@
 /dist
 /node_modules
 /build
-/models/cache/
+models/cache/
 
 # Logs
 logs

@@ -239,7 +239,7 @@ export class InferenceJobService implements OnModuleInit {
         return reject(signal.reason);
       }
 
-      const scriptPath = path.join(process.cwd(), 'scripts', 'yolo_inference.py');
+      const scriptPath = path.join(process.cwd(), 'scripts', 'inference_engine.py');
       const pythonExecutable = this.configService.get<string>(
         'PYTHON_EXECUTABLE',
         'python3',

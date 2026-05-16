@@ -1,0 +1,75 @@
+{
+  "models": [
+    {
+      "id": "v1.0-yolo26-arch",
+      "name": "Object Detector - Segmentation for Architecture",
+      "AEC_speciality": "Architecure",
+      "task": "instance segmentation",
+      "model_type": "ultralytics", 
+      "version": "1.0.1",
+      "model": "yol26m-seg",
+    "provenance": {
+            "trained released": "15/05/2026",
+            "trained_by": "Santiago Dos Santos",
+            "dataset": "FloorPlanCAD",
+            "train_images": "8128",
+            "val_images": "2033",
+            "test_images": "5502",
+            "epochs": "162",
+            "hours":"10.314",
+            "notebook":"FloorPlanCad.ipynb"
+        },
+      "metrics": {
+        "mAP50": {
+          "Box": 0.8021,
+          "Mask": 0.7545
+        },
+        "mAP50-95": {
+          "Box": 0.7165,
+          "Mask": 0.5053
+        },
+      "trained by": "Santiago Dos Santos",
+      "drive_id": "1giC8oQ2-tivH9yFz89fltDvE39drQpLt",
+      "config": {
+        "confidence": 0.4,
+        "slice_height": 640,
+        "slice_width": 640
+      }
+    },
+       {
+      "id": "v1.2-yolo26-arch",
+      "name": "Object Detector - Segmentation for Architecture",
+      "AEC_speciality": "Architecure",
+      "task": "instance segmentation",
+      "library": "ultralytics",
+      "version": "1.0.2",
+      "model": "yol26m-seg",
+    "provenance": {
+            "trained released": "15/05/2026",
+            "trained_by": "Santiago Dos Santos",
+            "dataset": "FloorPlanCAD",
+            "train_images": "8128",
+            "val_images": "2033",
+            "test_images": "5502",
+            "epochs": "180",
+            "hours":"14.488",
+            "notebook":"FloorPlanCad.ipynb"
+        },
+      "metrics": {
+        "mAP50": {
+          "Box": 0.7981,
+          "Mask": 0.7758
+        },
+        "mAP50-95": {
+          "Box": 0.6800,
+          "Mask": 0.5995
+        },
+      "trained by": "Santiago Dos Santos",
+      "drive_id": "1dLwYsTygfJHGWLQkRHRcXKH9drPmyu_d",
+      "config": {
+        "confidence": 0.4,
+        "slice_height": 928,
+        "slice_width": 928
+      }
+    }, ]
+}
