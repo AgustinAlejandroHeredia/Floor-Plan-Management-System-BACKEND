@@ -24,6 +24,13 @@ export class InferenceJob {
   })
   status: InferenceJobStatus;
 
+  @Prop({ 
+    type: [String],
+    required: true,
+    default: [],
+  })
+  selectedModels: string[]
+
   @Prop({ type: Object, default: null })
   result: Record<string, any> | null;
 }

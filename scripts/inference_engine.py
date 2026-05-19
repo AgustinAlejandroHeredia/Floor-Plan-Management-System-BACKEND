@@ -34,6 +34,7 @@ def main():
     parser.add_argument("image_path", help="Path to the input image")
     parser.add_argument("model_path", help="Path to the YOLO model (.pt)")
     parser.add_argument("model_type", help="'ultralytics', 'mmdet', 'detectron2'")
+    parser.add_argument("model_id", help="Model ID from models.json")
     parser.add_argument("--slice-height", type=int, default=1024, help="Slice height in pixels (default: 1024)")
     parser.add_argument("--slice-width", type=int, default=1024, help="Slice width in pixels (default: 1024)")
     parser.add_argument("--overlap-height-ratio", type=float, default=0.2, help="Vertical overlap ratio (default: 0.2)")
@@ -65,7 +66,7 @@ def main():
         sys.exit(1)
 
     # Resolve filename and check cache
-    ext = ".pt" if model_meta.get("library") == "ultralytics" else ".pth"
+    ext = ".pt" if model_meta.get("model_type") == "ultralytics" else ".pth"
     local_model_path = cache_dir / f"{model_meta['id']}_v{model_meta['version']}{ext}"
     
     try:

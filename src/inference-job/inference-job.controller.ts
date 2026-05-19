@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -24,13 +25,18 @@ import { JwtAuthGuard } from 'src/jwt/jwt-auth.guard';
 export class InferenceJobController {
   constructor(private readonly inferenceJobService: InferenceJobService) {}
 
+  // REACHED BY CLIENT
   @Post('blueprints/:blueprintId/inference-jobs')
   @ApiOperation({ summary: 'Enqueue an inference job for a blueprint' })
   @ApiParam({ name: 'blueprintId', description: 'Blueprint ID' })
   @ApiResponse({ status: 201, description: 'Job created and enqueued' })
   @ApiResponse({ status: 404, description: 'Blueprint not found' })
-  enqueue(@Param('blueprintId') blueprintId: string) {
-    return this.inferenceJobService.enqueue(blueprintId);
+  enqueue(
+    @Param('blueprintId') blueprintId: string,
+    @Body('selectedModels') selectedModels: string[],
+  ) {
+    console.log("SELECTED MODELS RECIVED: ", selectedModels)
+    return this.inferenceJobService.enqueue(blueprintId, selectedModels);
   }
 
   @Get('inference-jobs/:id')
@@ -52,4 +58,13 @@ export class InferenceJobController {
   cancel(@Param('id') id: string) {
     return this.inferenceJobService.cancel(id);
   }
+
+  @Get('availableModels')
+  @ApiOperation({ summary: 'Get inference job available models per label' })
+  @ApiResponse({ status: 200, description: 'Models obtained' })
+  @ApiResponse({ status: 404, description: 'Models not found' })
+  getAvailableModels(){
+    return this.inferenceJobService.getAvailableModels()
+  }
+
 }
