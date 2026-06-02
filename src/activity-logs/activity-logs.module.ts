@@ -2,13 +2,12 @@ import { Module } from '@nestjs/common';
 import { ActivityLogsService } from './activity-logs.service';
 import { ActivityLogsController } from './activity-logs.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { User, UserSchema } from 'src/user/schemas/user.schema';
-import { UserModule } from 'src/user/user.module';
+import { ActivityLog, ActivityLogSchema } from './schemas/activity-logs.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: User.name, schema: UserSchema }
+      { name: ActivityLog.name, schema: ActivityLogSchema }
     ]),
   ],
   controllers: [ActivityLogsController],
