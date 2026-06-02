@@ -3,6 +3,7 @@ import {
   NotFoundException,
   InternalServerErrorException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -17,6 +18,7 @@ import { ProjectService } from 'src/project/project.service';
 import { randomUUID } from "crypto";
 import axios from 'axios';
 import { UpdateSectionViewsDto } from './dto/update-section-views';
+import { UserRole } from 'src/user/common/role.enum';
 
 @Injectable()
 export class BlueprintService {
@@ -29,18 +31,33 @@ export class BlueprintService {
     private readonly projectService: ProjectService,
   ) {}
 
+  private async userBelongsToOrganization(userId: string, organizationId: string): Promise<boolean> {
+    const userBelogsToOrganization = await this.organizationService.myOrganizationRole(userId, organizationId)
+    if(!userBelogsToOrganization){
+      return false
+    }
+    return true
+  }
+
   // CREATE (upload + mongo)
   async create(
     file: Express.Multer.File,
     dto: CreateBlueprintDto,
     userId: string,
+    userGlobalRole: string,
   ): Promise<Blueprint> {
     if (!file) {
-      throw new InternalServerErrorException('File required');
+      throw new BadRequestException('File required');
+    }
+
+    // user exists in the organization?
+    const belongs = await this.userBelongsToOrganization(userId, dto.organizationId)
+    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
+      throw new ForbiddenException("Access denied, user does not belog to the organization")
     }
 
     const organization = await this.organizationService.findOne(dto.organizationId)
-    const organizationBlueprintsCount = await this.getBlueprintCountByOrganizationId(dto.organizationId)
+    const organizationBlueprintsCount = await this.getBlueprintCountByOrganizationId(dto.organizationId, userId, userGlobalRole)
     if(organizationBlueprintsCount+1 > Number(organization.maxBlueprints)){
       throw new BadRequestException(
         'Maximum organization blueprint count reached, cannot upload this file.'
@@ -121,18 +138,28 @@ export class BlueprintService {
       } catch (error) {
         console.error("Rollback failed : ", error)
       }
-      throw new InternalServerErrorException('Error creando blueprint');
+      throw new InternalServerErrorException('Error creating blueprint');
     }
   }
 
   // GET ONE (mongo + backblaze)
-  async findOne(id: string) {
+  async findOne(
+    id: string,
+    userId: string,
+    userGlobalRole: string,
+  ) {
     const blueprint = await this.blueprintModel
       .findById(id, {titleBlock: 0})
       .lean();
 
     if (!blueprint) {
       throw new NotFoundException('Blueprint no encontrado');
+    }
+
+    // user exists in the organization?
+    const belongs = await this.userBelongsToOrganization(userId, blueprint.organizationId.toString())
+    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
+      throw new ForbiddenException("Access denied, user does not belog to the organization")
     }
 
     const downloadUrl = await this.storageService.getSignedDownloadUrl(
@@ -145,7 +172,6 @@ export class BlueprintService {
       levels: project?.levels,
       basement: project?.basement,
     }
-    console.log("PROJECT FIELDS OBTAINED : ", projectFields)
 
     const responseData: any = {
       ...blueprint,
@@ -169,11 +195,29 @@ export class BlueprintService {
   }
 
   // GET all thumbnails by project
-  async findThumbnailsByProject(projectId: string) {
+  async findThumbnailsByProject(
+    projectId: string,
+    userId: string,
+    userGlobalRole: string,
+  ) {
     const blueprints = await this.blueprintModel
       .find({ projectId: new Types.ObjectId(projectId) })
       .sort({ creationDate: -1 }) // order by date
       .lean();
+
+    if(blueprints.length === 0){
+      return []
+    }
+
+    // user exists in the organization?
+    let organizationId = ""
+    if(blueprints.length > 0){
+      organizationId = blueprints[0].organizationId.toString()
+    }
+    const belongs = await this.userBelongsToOrganization(userId, organizationId)
+    if(organizationId && !belongs && userGlobalRole !== UserRole.SUPERADMIN){
+      throw new ForbiddenException("Access denied, user does not belog to the organization")
+    }
 
     return Promise.all(
       blueprints.map(async (bp) => ({
@@ -191,22 +235,40 @@ export class BlueprintService {
   }
 
   // UPDATE
-  async update(id: string, dto: UpdateBlueprintDto) {
+  async update(
+    id: string, 
+    dto: UpdateBlueprintDto,
+    userId: string,
+    userGlobalRole: string,
+  ) {
+    
+    const originalBlueprint = await this.blueprintModel.findById(new Types.ObjectId(id))
+    
+    if (!originalBlueprint) {
+      throw new NotFoundException('Blueprint not found');
+    }
+
+    // user exists in the organization?
+    const belongs = await this.userBelongsToOrganization(userId, originalBlueprint.organizationId.toString())
+    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
+      throw new ForbiddenException("Access denied, user does not belog to the organization")
+    }
+    
     const updated = await this.blueprintModel.findByIdAndUpdate(
       id,
       dto,
       { new: true },
     );
 
-    if (!updated) {
-      throw new NotFoundException('Blueprint no encontrado');
-    }
-
     return updated;
   }
 
   // DELETE (backblaze + mongo)
-  async remove(id: string) {
+  async remove(
+    id: string,
+    userId: string,
+    userGlobalRole: string,
+  ) {
     const blueprint = await this.blueprintModel
       .findById(id, {
         storageId: 1,
@@ -217,6 +279,12 @@ export class BlueprintService {
 
     if (!blueprint) {
       throw new NotFoundException('Blueprint no encontrado');
+    }
+
+    // user exists in the organization?
+    const belongs = await this.userBelongsToOrganization(userId, blueprint.organizationId.toString())
+    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
+      throw new ForbiddenException("Access denied, user does not belog to the organization")
     }
 
     // If this blueprint was a crop, remove from original blueprint
@@ -253,7 +321,11 @@ export class BlueprintService {
     };
   }
 
-  async getOldestBlueprintThumbnailUrl(projectId: string) {
+  async getOldestBlueprintThumbnailUrl(
+    projectId: string,
+    userId: string,
+    userGlobalRole: string,
+  ) {
     const blueprint = await this.blueprintModel
       .findOne({ projectId: new Types.ObjectId(projectId) })
       .sort({ creationDate: 1 })
@@ -265,6 +337,12 @@ export class BlueprintService {
       );
     }
 
+    // user exists in the organization?
+    const belongs = await this.userBelongsToOrganization(userId, blueprint.organizationId.toString())
+    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
+      throw new ForbiddenException("Access denied, user does not belog to the organization")
+    }
+
     const downloadUrl = await this.storageService.getSignedDownloadUrl(
       this.thumbnailService.getThumbnailName(blueprint.filename)
     );
@@ -274,10 +352,20 @@ export class BlueprintService {
     };
   }
 
-  async getBlueprintDownloadUrlOnly(blueprintId) {
+  async getBlueprintDownloadUrlOnly(
+    blueprintId,
+    userId: string,
+    userGlobalRole: string,
+  ) {
     const blueprint = await this.blueprintModel.findById(blueprintId).lean();
     if (!blueprint) {
       throw new NotFoundException('Blueprint not found');
+    }
+
+    // user exists in the organization?
+    const belongs = await this.userBelongsToOrganization(userId, blueprint.organizationId.toString())
+    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
+      throw new ForbiddenException("Access denied, user does not belog to the organization")
     }
 
     const downloadUrl = await this.storageService.getSignedDownloadUrl(
@@ -289,7 +377,11 @@ export class BlueprintService {
     };
   }
 
-  async getImageStream(id: string): Promise<{
+  async getImageStream(
+    id: string,
+    userId: string,
+    userGlobalRole: string,
+  ): Promise<{
     stream: NodeJS.ReadableStream;
     contentType: string;
   }> {
@@ -297,6 +389,12 @@ export class BlueprintService {
 
     if (!blueprint) {
       throw new NotFoundException('Blueprint no encontrado');
+    }
+
+    // user exists in the organization?
+    const belongs = await this.userBelongsToOrganization(userId, blueprint.organizationId.toString())
+    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
+      throw new ForbiddenException("Access denied, user does not belog to the organization")
     }
 
     const signedUrl = await this.storageService.getSignedDownloadUrl(
@@ -314,10 +412,21 @@ export class BlueprintService {
     };
   }
 
-  async getBlueprintCountByOrganizationId(organizationId: string): Promise<number> {
-      return await this.blueprintModel.countDocuments({
-        organizationId: new Types.ObjectId(organizationId)
-      })
+  async getBlueprintCountByOrganizationId(
+    organizationId: string, 
+    userId: string, 
+    userGlobalRole: string,
+  ): Promise<number> {
+
+    // user exists in the organization?
+    const belongs = await this.userBelongsToOrganization(userId, organizationId)
+    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
+      throw new ForbiddenException("Access denied, user does not belog to the organization")
+    }
+  
+    return await this.blueprintModel.countDocuments({
+      organizationId: new Types.ObjectId(organizationId)
+    })
   }
 
   async getBlueprintCountsByOrganizationIds(
@@ -432,9 +541,23 @@ export class BlueprintService {
   async updateSectionViews(
     blueprintId: string,
     dto: UpdateSectionViewsDto,
+    userId: string,
+    userGlobalRole: string,
   ): Promise<BlueprintDocument> {
 
-    const blueprint =
+    const blueprint = await this.blueprintModel.findById(new Types.ObjectId(blueprintId))
+
+    if (!blueprint) {
+      throw new NotFoundException('Blueprint not found');
+    }
+
+    // user exists in the organization?
+    const belongs = await this.userBelongsToOrganization(userId, blueprint.organizationId.toString())
+    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
+      throw new ForbiddenException("Access denied, user does not belog to the organization")
+    }
+
+    const updatedblueprint =
       await this.blueprintModel.findByIdAndUpdate(
         new Types.ObjectId(blueprintId),
         {
@@ -445,10 +568,10 @@ export class BlueprintService {
         },
       );
 
-    if (!blueprint) {
+    if (!updatedblueprint) {
       throw new NotFoundException('Blueprint not found');
     }
 
-    return blueprint;
+    return updatedblueprint;
   }
 }

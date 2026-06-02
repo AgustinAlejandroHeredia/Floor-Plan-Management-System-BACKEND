@@ -31,6 +31,9 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { UpdateSectionViewsDto } from './dto/update-section-views';
+import { AccessGuard } from 'src/auth/guards/access.guard';
+import { UserRoles } from 'src/auth/decorators/user-roles.decorator';
+import { UserRole } from 'src/user/common/role.enum';
 
 @ApiTags('Blueprints')
 @ApiBearerAuth('access-token')
@@ -82,6 +85,7 @@ export class BlueprintController {
       file,
       dto,
       req.user.internalId,
+      req.user.globalRole,
     );
   }
 
@@ -102,8 +106,11 @@ export class BlueprintController {
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({ status: 200, description: 'Blueprint obtained' })
   @ApiResponse({ status: 404, description: 'Not Found' })
-  async getOne(@Param('id') id: string) {
-    return this.blueprintService.findOne(id);
+  async getOne(
+    @Req() req,
+    @Param('id') id: string
+  ) {
+    return this.blueprintService.findOne(id, req.user.internalId, req.user.globalRole);
   }
 
   // GET all thumbnailss by project
@@ -112,8 +119,11 @@ export class BlueprintController {
   @ApiOperation({ summary: 'Get all blueprint thumnails by project id' })
   @ApiParam({ name: 'projectId', type: String })
   @ApiResponse({ status: 200, description: 'Blueprints list' })
-  findThumbnailsByProject(@Param('projectId') projectId: string) {
-    return this.blueprintService.findThumbnailsByProject(projectId);
+  findThumbnailsByProject(
+    @Req() req,
+    @Param('projectId') projectId: string
+  ) {
+    return this.blueprintService.findThumbnailsByProject(projectId, req.user.internalId, req.user.globalRole);
   }
 
   // GET my files
@@ -134,9 +144,9 @@ export class BlueprintController {
   update(
     @Param('id') id: string,
     @Body() dto: UpdateBlueprintDto,
+    @Req() req,
   ) {
-    console.log("TESTEO DE TIPO : ", dto instanceof UpdateBlueprintDto)
-    return this.blueprintService.update(id, dto);
+    return this.blueprintService.update(id, dto, req.user.internalId, req.user.globalRole);
   }
 
   // DELETE
@@ -145,8 +155,11 @@ export class BlueprintController {
   @ApiOperation({ summary: 'Delete blueprint' })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({ status: 200, description: 'Blueprint deleted successfully' })
-  remove(@Param('id') id: string) {
-    return this.blueprintService.remove(id);
+  remove(
+    @Param('id') id: string,
+    @Req() req,
+  ) {
+    return this.blueprintService.remove(id, req.user.internalId, req.user.globalRole);
   }
 
   // GET OLDEST BLUEPRINT
@@ -157,8 +170,9 @@ export class BlueprintController {
   @ApiResponse({ status: 200, description: 'Blueprint file url obtained successfully' })
   getOldestBlueprintUrl(
     @Param('projectId') projectId,
+    @Req() req,
   ){
-    return this.blueprintService.getOldestBlueprintThumbnailUrl(projectId)
+    return this.blueprintService.getOldestBlueprintThumbnailUrl(projectId, req.user.internalId, req.user.globalRole)
   }
 
   // GET BLUEPRINT DOWNLOAD URL ONLY
@@ -169,8 +183,9 @@ export class BlueprintController {
   @ApiResponse({ status: 200, description: 'Blueprint file url obtained successfully' })
   getBlueprintDownloadUrlOnly(
     @Param('blueprintId') blueprintId,
+    @Req() req,
   ){
-    return this.blueprintService.getBlueprintDownloadUrlOnly(blueprintId)
+    return this.blueprintService.getBlueprintDownloadUrlOnly(blueprintId, req.user.userId, req.user.globalRole)
   }
 
   // GET RAW IMAGE FOR BLUEPRINT VIEW AND CROP
@@ -181,9 +196,10 @@ export class BlueprintController {
   async getImage(
     @Param('id') id: string,
     @Res() res: Response,
+    @Req() req,
   ) {
     const { stream, contentType } =
-      await this.blueprintService.getImageStream(id);
+      await this.blueprintService.getImageStream(id, req.user.internalId, req.user.globalRole);
 
     res.set({
       'Content-Type': contentType,
@@ -198,12 +214,14 @@ export class BlueprintController {
   @ApiParam({ name: 'organizationId', type: String })
   async getBlueprintCountByOrganizationId(
     @Param('organizationId') organizationId: string,
+    @Req() req,
   ){
-    return await this.blueprintService.getBlueprintCountByOrganizationId(organizationId)
+    return await this.blueprintService.getBlueprintCountByOrganizationId(organizationId, req.user.internalId, req.user.globalRole)
   }
 
   @Get('/counts/:organizationIds')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UserRoles(UserRole.SUPERADMIN)
   @ApiOperation({ summary: 'Get blueprint count for the provided organization ids' })
   @ApiParam({ name: 'organizationId', type: String })
   async getBlueprintCountsByOrganizationIds(
@@ -219,11 +237,14 @@ export class BlueprintController {
   async updateSectionViews(
     @Param('id') blueprintId: string,
     @Body() dto: UpdateSectionViewsDto,
+    @Req() req,
   ) {
     const blueprint =
       await this.blueprintService.updateSectionViews(
         blueprintId,
         dto,
+        req.user.internalId,
+        req.user.globalRole,
       );
 
     if (!blueprint) {
