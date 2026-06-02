@@ -7,6 +7,9 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { ProjectMembershipService } from 'src/project_membership/project_membership.service';
 import { ProjectRole } from 'src/user/common/role.enum';
 import { ProjectStatus } from 'src/project/common/status.enum';
+import { Blueprint, BlueprintDocument } from 'src/blueprint/schemas/blueprint.schema';
+import { Organization, OrganizationDocument } from 'src/organization/schemas/organization.schema';
+import { ProjectUserList } from './common/types';
 
 @Injectable()
 export class ProjectService {
@@ -16,6 +19,8 @@ export class ProjectService {
     @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
     @Inject(forwardRef(() => ProjectMembershipService))
     private readonly projectMembershipService: ProjectMembershipService,
+    @InjectModel(Blueprint.name) private blueprintModel: Model<BlueprintDocument>,
+    @InjectModel(Organization.name) private organizationModel: Model<OrganizationDocument>,
   ) {}
 
 
@@ -221,5 +226,65 @@ export class ProjectService {
     await this.projectModel.deleteMany({
       organizationId: new Types.ObjectId(organizationId)
     })
+  }
+
+  // GET ALL PROJECTS WHERE THE USER HAS PARTICIPATED
+  async getUserProjects(userId: string): Promise<ProjectUserList[]> {
+
+    const userObjectId = new Types.ObjectId(userId)
+
+    const uploads = await this.blueprintModel.countDocuments({
+      uploadedBy: userObjectId,
+    })
+
+    const projectIds = await this.blueprintModel.distinct(
+      'projectId',
+      {
+        uploadedBy: userObjectId,
+      },
+    )
+
+    const projects = await this.projectModel.find(
+      {
+        _id: { $in: projectIds },
+      },
+      {
+        projectName: 1,
+        status: 1,
+        organizationId: 1,
+      },
+    )
+
+    const organizationIds = [
+      ...new Set(
+        projects.map(project => project.organizationId.toString())
+      ),
+    ]
+
+    const organizations = await this.organizationModel.find(
+      {
+        _id: { $in: organizationIds },
+      },
+      {
+        name: 1,
+      },
+    )
+
+    const organizationMap = new Map(
+      organizations.map(org => [
+        org._id.toString(),
+        org.name,
+      ])
+    )
+
+    return projects.map(project => ({
+      _id: project._id.toString(),
+      projectName: project.projectName,
+      status: project.status,
+      uploads,
+      organizationId: project.organizationId.toString(),
+      organizationName:
+        organizationMap.get(project.organizationId.toString()) ?? "",
+    }))
   }
 }

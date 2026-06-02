@@ -9,6 +9,7 @@ import {
   UseGuards,
   Req,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 
 import { ProjectService } from './project.service';
@@ -75,17 +76,6 @@ export class ProjectController {
   @ApiResponse({ status: 200, description: 'Projects list' })
   findAll() {
     return this.projectService.findAll();
-  }
-
-  // GET ONE
-  @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get project by id' })
-  @ApiParam({ name: 'id', type: String })
-  @ApiResponse({ status: 200, description: 'Project found' })
-  @ApiResponse({ status: 404, description: 'Project not found' })
-  findOne(@Param('id') id: string) {
-    return this.projectService.findOne(id);
   }
 
   // UPDATE
@@ -182,5 +172,32 @@ export class ProjectController {
     }
 
     return this.projectService.changeUserRoleByUserAndProject(userId, projectId, newProjectRole);
+  }
+
+  // GET USER PROJECTS AS SELF OR ADMIN
+  @Get('userProjects')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get user projects where has participated as self or admin' })
+  @ApiResponse({ status: 200, description: 'Projects obtained successfully' })
+  getUserProjects(
+    @Req() req,
+    @Query('userId') userId?: string,
+  ){
+    const targetUserId = userId ?? req.user.internalId
+    if(req.user.internalId === targetUserId || req.user.globalRole === 'super_admin'){
+      return this.projectService.getUserProjects(targetUserId)
+    }
+    return []
+  }
+
+  // GET ONE
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get project by id' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Project found' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  findOne(@Param('id') id: string) {
+    return this.projectService.findOne(id);
   }
 }
