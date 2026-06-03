@@ -12,6 +12,7 @@ import { Organization, OrganizationSchema } from 'src/organization/schemas/organ
 import { OrganizationMembership, OrganizationMembershipSchema } from 'src/organization_membership/schemas/organization_membership.schema';
 import { Project, ProjectSchema } from 'src/project/schemas/project.schema';
 import { ProjectMembership, ProjectMembershipSchema } from 'src/project_membership/schemas/project_membership.schema';
+import { ActivityLogsModule } from 'src/activity-logs/activity-logs.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ProjectMembership, ProjectMembershipSchema } from 'src/project_membersh
       { name: Project.name, schema: ProjectSchema },
       { name: ProjectMembership.name, schema: ProjectMembershipSchema },
     ]),
+    ActivityLogsModule,
     AuthModule,
   ],
   controllers: [UserController],

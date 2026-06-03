@@ -1,5 +1,6 @@
 import {
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 
@@ -17,6 +18,9 @@ import { Organization, OrganizationDocument } from 'src/organization/schemas/org
 import { OrganizationMembership, OrganizationMembershipDocument } from 'src/organization_membership/schemas/organization_membership.schema';
 import { Project, ProjectDocument } from 'src/project/schemas/project.schema';
 import { ProjectMembership, ProjectMembershipDocument } from 'src/project_membership/schemas/project_membership.schema';
+import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
+import { ActionType } from 'src/activity-logs/common/types';
+import { UserRole } from './common/role.enum';
 
 @Injectable()
 export class UserService {
@@ -38,6 +42,8 @@ export class UserService {
     private readonly projectMembershipModel: Model<ProjectMembershipDocument>,
 
     private readonly authService: AuthService,
+
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   // ======================
@@ -45,6 +51,13 @@ export class UserService {
   // ======================
   async create(createUserDto: CreateUserDto): Promise<User> {
     const user = new this.userModel(createUserDto);
+    // ACTIVITY LOG
+    this.activityLogsService.create(user.id, {
+      action: ActionType.UPLOAD_BLUEPRINT,
+      description: `New user ${user.name} joined platform.`,
+      targetName: `${user.email}`,
+      targetId: `${user.id}`
+    })
     return user.save();
   }
 
@@ -82,6 +95,14 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    // ACTIVITY LOG
+    this.activityLogsService.create(user.id, {
+      action: ActionType.EDIT_USER,
+      description: `User ${user.name} edits self credentials. Name: "${updateUserDto.name}" -> "${user.name}". Email: "${updateUserDto.email}" -> "${user.email}"`,
+      targetName: `${user.email}`,
+      targetId: `${user.id}`
+    })
 
     return user;
   }
@@ -199,6 +220,48 @@ export class UserService {
     console.log("USER CREATED SUCCESSFULLY : ", user)
 
     return user;
+  }
+
+  async changeUserGlobalRole(
+    userId: string,
+    superadminId: string,
+    newRole?: string,
+  ){
+    let role = ""
+
+    const user = await this.userModel.findById(new Types.ObjectId(userId))
+    if(!user) throw new NotFoundException("User not found")
+
+    if(newRole){
+      role = newRole
+    } else {
+
+      if(user.globalRole === UserRole.NONE){
+        role = UserRole.SUPERADMIN
+      } else {
+        role = UserRole.NONE
+      }
+    }
+
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      new Types.ObjectId(userId),
+      {
+        globalRole: role,
+      },
+      {
+        new: true,
+      }
+    )
+
+    if(!updatedUser) throw new InternalServerErrorException("User couldnt be updated")
+
+    // ACTIVITY LOG
+    this.activityLogsService.create(superadminId, {
+      action: ActionType.CHANGE_USER_GLOBAL_ROLE,
+      description: `Change user (${updatedUser.name} - ${updatedUser.email}) global role from "${user?.globalRole}" to "${updatedUser.globalRole}".`,
+      targetName: `${updatedUser.name}`,
+      targetId: `${updatedUser.id}`
+    })
   }
 
 }

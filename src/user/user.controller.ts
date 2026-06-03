@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, Headers, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, Headers, Query, ForbiddenException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -22,13 +22,20 @@ export class UserController {
     return this.userService.create(createUserDto);
   }
 
+  // Only self can patch user
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  update(
+    @Req() req,
+    @Param('id') id: string, 
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    if(req.user.internalId !== id) throw new ForbiddenException("Permission denied")
     return this.userService.update(id, updateUserDto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UserRoles(UserRole.SUPERADMIN)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.userService.remove(id);
@@ -68,10 +75,12 @@ export class UserController {
     return await this.userService.getUserProjectsByOrganization(req.user.internalId, organizationId)
   }
 
-  @UseGuards(JwtAuthGuard, AccessGuard)
-  @UserRoles(UserRole.SUPERADMIN)
+  @UseGuards(JwtAuthGuard)
   @Get('allUsers/superadmin')
-  async getAllUsersAsSuperadmin(){
+  async getAllUsersAsSuperadmin(
+    @Req() req,
+  ){
+    if(req.user.globalRole !== UserRole.SUPERADMIN) throw new ForbiddenException("Access denied")
     return await this.userService.findAll()
   }
 
@@ -83,6 +92,17 @@ export class UserController {
   ){
     const targetUserId = userId ?? req.user.internalId
     return await this.userService.findOne(targetUserId)
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('changeUserGlobalRole/:userId')
+  async changeUserGlobalRole(
+    @Req() req,
+    @Param('userId') userId: string,
+    @Body() newRole?: UserRole,
+  ){
+    if(req.user.globalRole !== UserRole.SUPERADMIN) throw new ForbiddenException("Access denied")
+    return await this.userService.changeUserGlobalRole(userId, req.user.internalId, newRole)
   }
 
 }

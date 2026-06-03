@@ -1,5 +1,9 @@
 export enum ActionType {
 
+    USER_JOINS_PLATFORM = "user joins platform",
+    EDIT_USER = "user edits self credentials",
+    CHANGE_USER_GLOBAL_ROLE = "change user global role",
+
     SEND_INVITATION = "send invitation",
     DELETE_INVIATION = "delete invitation",
 
