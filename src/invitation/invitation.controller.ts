@@ -21,7 +21,7 @@ export class InvitationController {
     @Req() req,
     @Body() createInvitationDto: CreateInvitationDto,
   ) {
-    return this.invitationService.create(req.user.internalId, createInvitationDto);
+    return this.invitationService.create(req.user.internalId, createInvitationDto, req.user.globalRole);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -33,19 +33,12 @@ export class InvitationController {
     return this.invitationService.validateInvitation(req.user.internalId, code)
   }
 
-  @Get()
-  findAll() {
-    return this.invitationService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.invitationService.findOne(+id);
-  }
-
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.invitationService.remove(+id);
+  remove(
+    @Param('id') id: string,
+    @Req() req,
+  ) {
+    return this.invitationService.remove(id, req.user.internalId, req.user.globalRole);
   }
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, HttpException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { OrganizationRole } from 'src/user/common/role.enum';
 import { InjectModel } from '@nestjs/mongoose';
@@ -28,9 +28,13 @@ export class InvitationService {
   async create(
     invitedBy: string, // USER CREATED THE INVITATION
     createInvitationDto: CreateInvitationDto,
+    userGlobalRole: string,
   ) {
     console.log("USER ID RECIVED : ", invitedBy)
     try {
+
+      // user belongs to this organization?
+      await this.organizationMembershipService.validateOrganizationAccess(invitedBy, createInvitationDto.organizationId, userGlobalRole)
 
       // SENDER BELONGS TO THE ORGANIZATION
       const senderMembership = await this.organizationMembershipService.findByUserIdAndOrganizationId(invitedBy, createInvitationDto.organizationId)
@@ -176,15 +180,22 @@ export class InvitationService {
     }
   }
 
-  findAll() {
-    return `This action returns all invitation`;
-  }
+  async remove(
+    id: string,
+    userId: string,
+    userGlobalRole: string,
+  ) {
+    const invitation = await this.invitationModel.findById(id)
 
-  findOne(id: number) {
-    return `This action returns a #${id} invitation`;
-  }
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found')
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} invitation`;
+    // user belongs to this organization?
+    await this.organizationMembershipService.validateOrganizationAccess(userId, invitation.organizationId.toString(), userGlobalRole)
+
+    await this.invitationModel.findByIdAndDelete(new Types.ObjectId(id))
+
+    return {message: 'Invitation deleted successfully'}
   }
 }
