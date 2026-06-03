@@ -31,6 +31,8 @@ import {
 import { FileStorageService } from 'src/file-storage/file-storage.service';
 import { UserRole } from 'src/user/common/role.enum';
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
+import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
+import { ActionType } from 'src/activity-logs/common/types';
 
 interface QueueEntry {
   jobId: string;
@@ -68,6 +70,7 @@ export class InferenceJobService implements OnModuleInit {
     @Inject(forwardRef(() => InferenceJobGateway))
     private readonly gateway: InferenceJobGateway,
     private readonly organizationMembershipService: OrganizationMembershipService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {
     this.maxConcurrent = this.configService.get<number>(
       'INFERENCE_MAX_CONCURRENT',
@@ -118,6 +121,14 @@ export class InferenceJobService implements OnModuleInit {
       selectedModels: selectedModels,
     });
     this.drainQueue();
+
+    // ACTIVITY LOG
+    this.activityLogsService.create(userId, {
+      action: ActionType.ENQUEUE_INFERENCE_JOB,
+      description: `Enqueued inference job for blueprint "${blueprint.blueprintName}" with wht next models: ${selectedModels.toString()}.`,
+      targetName: "new inference job",
+      targetId: `${savedJob.id}`
+    })
 
     return savedJob;
   }
@@ -199,6 +210,14 @@ export class InferenceJobService implements OnModuleInit {
       controller.abort();
       return;
     }
+
+    // ACTIVITY LOG
+    this.activityLogsService.create(userId, {
+      action: ActionType.ENQUEUE_INFERENCE_JOB,
+      description: `Canceled inference job for blueprint "${blueprint.blueprintName}".`,
+      targetName: "new inference job",
+      targetId: "jobId.id"
+    })
 
     // Edge case: job transitioned to a terminal state between the status read and here.
     // Nothing to do — it will already have a final status in the DB.

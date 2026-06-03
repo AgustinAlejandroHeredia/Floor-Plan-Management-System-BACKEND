@@ -22,6 +22,9 @@ export enum ActionType {
     EDIT_BLUEPRINT = "edit blueprint",
     EDIT_BLUEPRINT_SECTIONVIEWS = "update blueprint section views",
     DELETE_BLUEPRINT = "delete blueprint",
-    DOWNLOAD_BLUEPRINT = "download blueprint"
+    DOWNLOAD_BLUEPRINT = "download blueprint",
+
+    ENQUEUE_INFERENCE_JOB = "ask for inference job",
+    CANCEL_INFERENCE_JOB = "cancel pending inference job",
     
 }
