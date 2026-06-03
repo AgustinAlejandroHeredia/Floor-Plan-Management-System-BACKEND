@@ -19,6 +19,9 @@ import { FileStorageModule } from 'src/file-storage/file-storage.module';
 // AUTHMODULE
 import { AuthModule } from 'src/auth/auth.module';
 
+// ACTIVITIES LOGS
+import { ActivityLogsModule } from 'src/activity-logs/activity-logs.module';
+
 @Module({
     imports: [
         AuthModule,
@@ -27,6 +30,7 @@ import { AuthModule } from 'src/auth/auth.module';
         ProjectModule,
         BlueprintModule,
         FileStorageModule,
+        ActivityLogsModule,
     ],
     providers: [
         DeleteProjectService,

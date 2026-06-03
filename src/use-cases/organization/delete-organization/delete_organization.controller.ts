@@ -1,4 +1,4 @@
-import { Controller, Delete, Param, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Param, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/jwt/jwt-auth.guard';
 import { DeleteOrganizationService } from "./delete_organization.service";
 
@@ -31,9 +31,10 @@ export class DeleteOrganizationController {
     @ApiOperation({ summary: 'Delete organization (org, projects, memberships, blueprints and related files)' })
     @ApiResponse({ status: 201, description: 'Organization deleted successfully' })
     delete(
-        @Param('organizationId') organizationId: string
+        @Param('organizationId') organizationId: string,
+        @Req() req,
     ) {
-        return this.deleteOrganizationService.deleteOrganization(organizationId)
+        return this.deleteOrganizationService.deleteOrganization(organizationId, req.user.internalId)
     }
 
 }

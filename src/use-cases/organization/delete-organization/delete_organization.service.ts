@@ -7,6 +7,8 @@ import { BlueprintService } from 'src/blueprint/blueprint.service';
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 import { ProjectMembershipService } from 'src/project_membership/project_membership.service';
 import { FileStorageService } from 'src/file-storage/file-storage.service';
+import { ActivityLogsService } from "src/activity-logs/activity-logs.service";
+import { ActionType } from "src/activity-logs/common/types";
 
 @Injectable()
 export class DeleteOrganizationService {
@@ -18,9 +20,13 @@ export class DeleteOrganizationService {
         private readonly organizationMembershipService: OrganizationMembershipService,
         private readonly projectMembershipService: ProjectMembershipService,
         private readonly fileStorageService: FileStorageService,
+        private readonly activityLogsService: ActivityLogsService,
     ) {}
 
-    async deleteOrganization(organizationId: string): Promise<string[]> {
+    async deleteOrganization(
+        organizationId: string,
+        superadminId: string,
+    ): Promise<string[]> {
         const errors: string[] = [];
 
         console.log("------ START DELETE ORG : ", organizationId, " ------");
@@ -89,6 +95,14 @@ export class DeleteOrganizationService {
         // 9. organization (CRITICAL)
         await this.organizationService.remove(organizationId);
         console.log("9) Organization deleted");
+
+        // 10. activity log
+        this.activityLogsService.create(superadminId, {
+            action: ActionType.DELETE_ORGANIZATION,
+            description: `Delete organization "${organization.name}" including it's projects, blueprints, files and users memberships to it.`,
+            targetName: `${organization.name}`,
+            targetId: "deleted organization"
+        })
 
         console.log("------------------------ DELETE COMPLETED ------------------------");
 

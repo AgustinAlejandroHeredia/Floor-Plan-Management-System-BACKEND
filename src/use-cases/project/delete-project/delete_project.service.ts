@@ -5,6 +5,8 @@ import { ProjectService } from "src/project/project.service";
 import { BlueprintService } from "src/blueprint/blueprint.service";
 import { FileStorageService } from "src/file-storage/file-storage.service";
 import { ProjectMembershipService } from "src/project_membership/project_membership.service";
+import { ActivityLogsService } from "src/activity-logs/activity-logs.service";
+import { ActionType } from "src/activity-logs/common/types";
 
 @Injectable()
 export class DeleteProjectService {
@@ -14,9 +16,13 @@ export class DeleteProjectService {
         private readonly blueprintService: BlueprintService,
         private readonly fileStorageService: FileStorageService,
         private readonly projectMembershipService: ProjectMembershipService,
+        private readonly activityLogsService: ActivityLogsService,
     ) {}
 
-    async deleteProject(projectId: string): Promise<string[]> {
+    async deleteProject(
+        projectId: string,
+        userId: string,
+    ): Promise<string[]> {
 
         const errors: string[] = [];
 
@@ -72,6 +78,14 @@ export class DeleteProjectService {
         // 6. project (CRITICAL)
         await this.projectService.remove(projectId);
         console.log("6) Project deleted");
+
+        // 7. activity log
+        this.activityLogsService.create(userId, {
+        action: ActionType.DELETE_PROJECT,
+        description: `Delete project "${project.projectName}" including it's blueprints, files and user memberships.`,
+        targetName: `${project.projectName}`,
+        targetId: "deleted project"
+        })
 
         console.log("------------------------ DELETE COMPLETED ------------------------");
 

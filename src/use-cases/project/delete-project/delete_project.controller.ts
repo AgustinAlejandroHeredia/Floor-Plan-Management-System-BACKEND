@@ -1,4 +1,4 @@
-import { Controller, Delete, Param, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Param, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/jwt/jwt-auth.guard';
 import { DeleteProjectService } from './delete_project.service';
 
@@ -28,9 +28,10 @@ export class DeleteProjectController {
     @ApiOperation({ summary: 'Delete project (project, membership, blueprint and related files)' })
     @ApiResponse({ status: 201, description: 'Project deleted successfully' })
     delete(
-        @Param('projectId') projectId: string
+        @Param('projectId') projectId: string,
+        @Req() req,
     ) {
-        return this.deleteProjectService.deleteProject(projectId)
+        return this.deleteProjectService.deleteProject(projectId, req.user.internalId)
     }
 
 }
