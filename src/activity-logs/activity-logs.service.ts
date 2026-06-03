@@ -25,7 +25,7 @@ export class ActivityLogsService {
       return savedActivityLog
 
     } catch (error) {
-      return InternalServerErrorException
+      console.log("WARNING : AN ERROR HAS OCCURRED REGISTERING AN EVENT. THE EVENT IS AN ", createActivityLogDto.action, " EXECUTED BY THE USER WITH ID ", userId)
     }
   }
 
