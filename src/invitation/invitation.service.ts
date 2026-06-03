@@ -8,6 +8,8 @@ import { OrganizationService } from 'src/organization/organization.service';
 import { OrganizationActionPermission } from 'src/organization/common/orgPermission.enum';
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 import { UserService } from 'src/user/user.service';
+import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
+import { ActionType } from 'src/activity-logs/common/types';
 
 @Injectable()
 export class InvitationService {
@@ -18,6 +20,7 @@ export class InvitationService {
     private readonly organizationMembershipService: OrganizationMembershipService,
     private readonly organizationService: OrganizationService,
     private readonly userService: UserService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   // 6 digits numeric code
@@ -103,6 +106,14 @@ export class InvitationService {
       })
 
       const savedInvitation = await invitation.save()
+
+      // ACTIVITY LOG
+      this.activityLogsService.create(invitedBy, {
+        action: ActionType.SEND_INVITATION,
+        description: `Invitation craeted for the user with emal "${savedInvitation.userEmail}" with "${savedInvitation.userOrganizationRole}" role.`,
+        targetName: `${savedInvitation.userEmail}`,
+        targetId: `${savedInvitation.id}`
+      })
 
       return savedInvitation;
 
@@ -193,6 +204,14 @@ export class InvitationService {
 
     // user belongs to this organization?
     await this.organizationMembershipService.validateOrganizationAccess(userId, invitation.organizationId.toString(), userGlobalRole)
+
+    // ACTIVITY LOG
+    this.activityLogsService.create(userId, {
+      action: ActionType.SEND_INVITATION,
+      description: `Invitation deleted for the user with emal "${invitation.userEmail}" with "${invitation.userOrganizationRole}" role.`,
+      targetName: `${invitation.userEmail}`,
+      targetId: `${invitation.id}`
+    })
 
     await this.invitationModel.findByIdAndDelete(new Types.ObjectId(id))
 

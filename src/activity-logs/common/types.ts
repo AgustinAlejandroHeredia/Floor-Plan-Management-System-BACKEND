@@ -3,6 +3,8 @@ export enum ActionType {
     JOIN_ORGANIZATION = "join organization",
 
     SEND_INVITATION = "send invitation",
+    DELETE_INVIATION = "delete invitation",
+
     ADD_USER = "add user",
     KICK_USER = "kick user",
 

@@ -6,6 +6,7 @@ import { Invitation, InvitationSchema } from './schemas/invitation.schema';
 import { OrganizationModule } from 'src/organization/organization.module';
 import { OrganizationMembershipModule } from 'src/organization_membership/organization_membership.module';
 import { UserModule } from 'src/user/user.module';
+import { ActivityLogsModule } from 'src/activity-logs/activity-logs.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UserModule } from 'src/user/user.module';
     OrganizationMembershipModule,
     OrganizationModule,
     UserModule,
+    ActivityLogsModule,
   ],
   controllers: [InvitationController],
   providers: [InvitationService],
