@@ -213,7 +213,7 @@ export class InferenceJobService implements OnModuleInit {
 
     // ACTIVITY LOG
     this.activityLogsService.create(userId, {
-      action: ActionType.ENQUEUE_INFERENCE_JOB,
+      action: ActionType.CANCEL_INFERENCE_JOB,
       description: `Canceled inference job for blueprint "${blueprint.blueprintName}".`,
       targetName: "new inference job",
       targetId: "jobId.id"
