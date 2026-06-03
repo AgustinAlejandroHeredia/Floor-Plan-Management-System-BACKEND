@@ -6,6 +6,7 @@ import {
   HttpCode,
   Param,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -34,9 +35,10 @@ export class InferenceJobController {
   enqueue(
     @Param('blueprintId') blueprintId: string,
     @Body('selectedModels') selectedModels: string[],
+    @Req() req,
   ) {
-    console.log("SELECTED MODELS RECIVED: ", selectedModels)
-    return this.inferenceJobService.enqueue(blueprintId, selectedModels);
+    //console.log("SELECTED MODELS RECIVED: ", selectedModels)
+    return this.inferenceJobService.enqueue(blueprintId, selectedModels, req.user.internalId, req.user.globalRole);
   }
 
   @Get('inference-jobs/:id')
@@ -44,8 +46,11 @@ export class InferenceJobController {
   @ApiParam({ name: 'id', description: 'Inference job ID' })
   @ApiResponse({ status: 200, description: 'Job found' })
   @ApiResponse({ status: 404, description: 'Job not found' })
-  findOne(@Param('id') id: string) {
-    return this.inferenceJobService.findOne(id);
+  findOne(
+    @Param('id') id: string,
+    @Req() req,
+  ) {
+    return this.inferenceJobService.findOne(id, req.user.internalId, req.user.globalRole);
   }
 
   @Delete('inference-jobs/:id')
@@ -55,8 +60,11 @@ export class InferenceJobController {
   @ApiResponse({ status: 204, description: 'Cancellation initiated' })
   @ApiResponse({ status: 404, description: 'Job not found' })
   @ApiResponse({ status: 409, description: 'Job is already in a terminal status' })
-  cancel(@Param('id') id: string) {
-    return this.inferenceJobService.cancel(id);
+  cancel(
+    @Param('id') id: string,
+    @Req() req,
+  ) {
+    return this.inferenceJobService.cancel(id, req.user.internalId, req.user.globalRole);
   }
 
   @Get('availableModels')

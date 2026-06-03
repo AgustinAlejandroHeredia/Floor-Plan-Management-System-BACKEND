@@ -12,32 +12,27 @@ import { CreateBlueprintDto } from './dto/create-blueprint.dto';
 import { UpdateBlueprintDto } from './dto/update-blueprint.dto';
 import { FileStorageService, StoredFile } from 'src/file-storage/file-storage.service';
 import { ThumbnailService } from 'src/thumbnail/thumbnail.service';
-import { OrganizationService } from 'src/organization/organization.service';
 import { ProjectService } from 'src/project/project.service';
 
 import { randomUUID } from "crypto";
 import axios from 'axios';
 import { UpdateSectionViewsDto } from './dto/update-section-views';
 import { UserRole } from 'src/user/common/role.enum';
+import { Organization, OrganizationDocument } from 'src/organization/schemas/organization.schema';
+import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 
 @Injectable()
 export class BlueprintService {
   constructor(
     @InjectModel(Blueprint.name)
     private blueprintModel: Model<BlueprintDocument>,
+    @InjectModel(Organization.name)
+    private organizationModel: Model<OrganizationDocument>,
     private readonly storageService: FileStorageService,
     private readonly thumbnailService: ThumbnailService,
-    private readonly organizationService: OrganizationService,
     private readonly projectService: ProjectService,
+    private readonly organizationMembershipService: OrganizationMembershipService,
   ) {}
-
-  private async userBelongsToOrganization(userId: string, organizationId: string): Promise<boolean> {
-    const userBelogsToOrganization = await this.organizationService.myOrganizationRole(userId, organizationId)
-    if(!userBelogsToOrganization){
-      return false
-    }
-    return true
-  }
 
   // CREATE (upload + mongo)
   async create(
@@ -51,12 +46,16 @@ export class BlueprintService {
     }
 
     // user exists in the organization?
-    const belongs = await this.userBelongsToOrganization(userId, dto.organizationId)
+    const belongs = await this.organizationMembershipService.findByUserIdAndOrganizationId(userId, dto.organizationId)
     if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
       throw new ForbiddenException("Access denied, user does not belog to the organization")
     }
 
-    const organization = await this.organizationService.findOne(dto.organizationId)
+    const organization = await this.organizationModel.findById(new Types.ObjectId(dto.organizationId))
+    if(!organization){
+      throw new NotFoundException("Organization not found")
+    }
+    
     const organizationBlueprintsCount = await this.getBlueprintCountByOrganizationId(dto.organizationId, userId, userGlobalRole)
     if(organizationBlueprintsCount+1 > Number(organization.maxBlueprints)){
       throw new BadRequestException(
@@ -157,7 +156,7 @@ export class BlueprintService {
     }
 
     // user exists in the organization?
-    const belongs = await this.userBelongsToOrganization(userId, blueprint.organizationId.toString())
+    const belongs = await this.organizationMembershipService.findByUserIdAndOrganizationId(userId, blueprint.organizationId.toString())
     if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
       throw new ForbiddenException("Access denied, user does not belog to the organization")
     }
@@ -211,13 +210,8 @@ export class BlueprintService {
 
     // user exists in the organization?
     let organizationId = ""
-    if(blueprints.length > 0){
-      organizationId = blueprints[0].organizationId.toString()
-    }
-    const belongs = await this.userBelongsToOrganization(userId, organizationId)
-    if(organizationId && !belongs && userGlobalRole !== UserRole.SUPERADMIN){
-      throw new ForbiddenException("Access denied, user does not belog to the organization")
-    }
+    organizationId = blueprints[0].organizationId.toString()
+    await this.organizationMembershipService.validateOrganizationAccess(userId, organizationId.toString(), userGlobalRole)
 
     return Promise.all(
       blueprints.map(async (bp) => ({
@@ -249,10 +243,7 @@ export class BlueprintService {
     }
 
     // user exists in the organization?
-    const belongs = await this.userBelongsToOrganization(userId, originalBlueprint.organizationId.toString())
-    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
-      throw new ForbiddenException("Access denied, user does not belog to the organization")
-    }
+    await this.organizationMembershipService.validateOrganizationAccess(userId, originalBlueprint.organizationId.toString(), userGlobalRole)
     
     const updated = await this.blueprintModel.findByIdAndUpdate(
       id,
@@ -282,10 +273,7 @@ export class BlueprintService {
     }
 
     // user exists in the organization?
-    const belongs = await this.userBelongsToOrganization(userId, blueprint.organizationId.toString())
-    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
-      throw new ForbiddenException("Access denied, user does not belog to the organization")
-    }
+    await this.organizationMembershipService.validateOrganizationAccess(userId, blueprint.organizationId.toString(), userGlobalRole)
 
     // If this blueprint was a crop, remove from original blueprint
     if (blueprint.originalBlueprintId) {
@@ -338,10 +326,7 @@ export class BlueprintService {
     }
 
     // user exists in the organization?
-    const belongs = await this.userBelongsToOrganization(userId, blueprint.organizationId.toString())
-    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
-      throw new ForbiddenException("Access denied, user does not belog to the organization")
-    }
+    await this.organizationMembershipService.validateOrganizationAccess(userId, blueprint.organizationId.toString(), userGlobalRole)
 
     const downloadUrl = await this.storageService.getSignedDownloadUrl(
       this.thumbnailService.getThumbnailName(blueprint.filename)
@@ -363,10 +348,7 @@ export class BlueprintService {
     }
 
     // user exists in the organization?
-    const belongs = await this.userBelongsToOrganization(userId, blueprint.organizationId.toString())
-    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
-      throw new ForbiddenException("Access denied, user does not belog to the organization")
-    }
+    await this.organizationMembershipService.validateOrganizationAccess(userId, blueprint.organizationId.toString(), userGlobalRole)
 
     const downloadUrl = await this.storageService.getSignedDownloadUrl(
       blueprint.filename,
@@ -392,10 +374,7 @@ export class BlueprintService {
     }
 
     // user exists in the organization?
-    const belongs = await this.userBelongsToOrganization(userId, blueprint.organizationId.toString())
-    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
-      throw new ForbiddenException("Access denied, user does not belog to the organization")
-    }
+    await this.organizationMembershipService.validateOrganizationAccess(userId, blueprint.organizationId.toString(), userGlobalRole)
 
     const signedUrl = await this.storageService.getSignedDownloadUrl(
       blueprint.filename,
@@ -419,10 +398,7 @@ export class BlueprintService {
   ): Promise<number> {
 
     // user exists in the organization?
-    const belongs = await this.userBelongsToOrganization(userId, organizationId)
-    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
-      throw new ForbiddenException("Access denied, user does not belog to the organization")
-    }
+    await this.organizationMembershipService.validateOrganizationAccess(userId, organizationId, userGlobalRole)
   
     return await this.blueprintModel.countDocuments({
       organizationId: new Types.ObjectId(organizationId)
@@ -552,10 +528,7 @@ export class BlueprintService {
     }
 
     // user exists in the organization?
-    const belongs = await this.userBelongsToOrganization(userId, blueprint.organizationId.toString())
-    if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
-      throw new ForbiddenException("Access denied, user does not belog to the organization")
-    }
+    await this.organizationMembershipService.validateOrganizationAccess(userId, blueprint.organizationId.toString(), userGlobalRole)
 
     const updatedblueprint =
       await this.blueprintModel.findByIdAndUpdate(

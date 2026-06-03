@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
@@ -9,6 +9,7 @@ import { UpdateOrganizationMembershipDto } from './dto/update-organization_membe
 // SCHEMAs
 import { OrganizationMembership, OrganizationMembershipDocument } from './schemas/organization_membership.schema';
 import { UserDocument } from 'src/user/schemas/user.schema';
+import { UserRole } from 'src/user/common/role.enum';
 
 @Injectable()
 export class OrganizationMembershipService {
@@ -171,6 +172,20 @@ export class OrganizationMembershipService {
     await this.membershipModel.deleteMany({
       organizationId: objectId
     })
+  }
+
+  async validateOrganizationAccess(
+    userId: string,
+    organizationId: string,
+    userGlobalRole: string,
+  ): Promise<void> {
+    const membership = await this.membershipModel.findOne({
+      userId: new Types.ObjectId(userId),
+      organizationId: new Types.ObjectId(organizationId), 
+    })
+    if(!membership && userGlobalRole !== UserRole.SUPERADMIN){
+      throw new ForbiddenException("Access denied, user does not belog to the organization")
+    }
   }
 
 }

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   forwardRef,
   Inject,
   Injectable,
@@ -28,6 +29,8 @@ import {
   BlueprintDocument,
 } from 'src/blueprint/schemas/blueprint.schema';
 import { FileStorageService } from 'src/file-storage/file-storage.service';
+import { UserRole } from 'src/user/common/role.enum';
+import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 
 interface QueueEntry {
   jobId: string;
@@ -64,6 +67,7 @@ export class InferenceJobService implements OnModuleInit {
     private readonly configService: ConfigService,
     @Inject(forwardRef(() => InferenceJobGateway))
     private readonly gateway: InferenceJobGateway,
+    private readonly organizationMembershipService: OrganizationMembershipService,
   ) {
     this.maxConcurrent = this.configService.get<number>(
       'INFERENCE_MAX_CONCURRENT',
@@ -79,7 +83,12 @@ export class InferenceJobService implements OnModuleInit {
     );
   }
 
-  async enqueue(blueprintId: string, selectedModels: string[]): Promise<InferenceJobDocument> {
+  async enqueue(
+    blueprintId: string, 
+    selectedModels: string[],
+    userId: string,
+    userGlobalRole: string,
+  ): Promise<InferenceJobDocument> {
     const blueprint = await this.blueprintModel
       .findById(blueprintId, { filename: 1 })
       .lean();
@@ -87,6 +96,9 @@ export class InferenceJobService implements OnModuleInit {
     if (!blueprint) {
       throw new NotFoundException('Blueprint not found');
     }
+
+    // user exists in the organization?
+    await this.organizationMembershipService.validateOrganizationAccess(userId, blueprint.organizationId.toString(), userGlobalRole)
 
     if(selectedModels.length === 0) {
       throw new BadRequestException('No selected models provided')
@@ -110,11 +122,27 @@ export class InferenceJobService implements OnModuleInit {
     return savedJob;
   }
 
-  async findOne(jobId: string): Promise<InferenceJobDocument> {
+  async findOne(
+    jobId: string,
+    userId: string,
+    userGlobalRole: string,
+  ): Promise<InferenceJobDocument> {
+
     const job = await this.inferenceJobModel.findById(jobId).lean();
     if (!job) {
       throw new NotFoundException('Inference job not found');
     }
+
+    const blueprintId = job.blueprintId
+
+    const blueprint = await this.blueprintModel.findById(new Types.ObjectId(blueprintId))
+    if(!blueprint){
+      throw new NotFoundException("original blueprint not found")
+    }
+
+    // user exists in the organization?
+    await this.organizationMembershipService.validateOrganizationAccess(userId, blueprint.organizationId.toString(), userGlobalRole)
+
     return job;
   }
 
@@ -130,11 +158,25 @@ export class InferenceJobService implements OnModuleInit {
       .lean();
   }
 
-  async cancel(jobId: string): Promise<void> {
+  async cancel(
+    jobId: string,
+    userId: string,
+    userGlobalRole: string,
+  ): Promise<void> {
     const job = await this.inferenceJobModel.findById(jobId).lean();
     if (!job) {
       throw new NotFoundException('Inference job not found');
     }
+
+    const blueprintId = job.blueprintId
+
+    const blueprint = await this.blueprintModel.findById(new Types.ObjectId(blueprintId))
+    if(!blueprint){
+      throw new NotFoundException("original blueprint not found")
+    }
+
+    // user exists in the organization?
+    await this.organizationMembershipService.validateOrganizationAccess(userId, blueprint.organizationId.toString(), userGlobalRole)
 
     if (TERMINAL_STATUSES.has(job.status)) {
       throw new ConflictException(`Cannot cancel a job in status: ${job.status}`);

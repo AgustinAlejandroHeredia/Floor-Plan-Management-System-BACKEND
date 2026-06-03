@@ -6,6 +6,7 @@ import { InferenceJobGateway } from './inference-job.gateway';
 import { InferenceJob, InferenceJobSchema } from './schemas/inference-job.schema';
 import { Blueprint, BlueprintSchema } from 'src/blueprint/schemas/blueprint.schema';
 import { FileStorageModule } from 'src/file-storage/file-storage.module';
+import { OrganizationMembershipModule } from 'src/organization_membership/organization_membership.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { FileStorageModule } from 'src/file-storage/file-storage.module';
       { name: Blueprint.name, schema: BlueprintSchema },
     ]),
     FileStorageModule,
+    OrganizationMembershipModule,
   ],
   controllers: [InferenceJobController],
   providers: [InferenceJobService, InferenceJobGateway],
