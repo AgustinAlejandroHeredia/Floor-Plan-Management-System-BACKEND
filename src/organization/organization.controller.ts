@@ -59,8 +59,9 @@ export class OrganizationController {
   })
   create(
     @Body() dto: CreateOrganizationDto,
+    @Req() req,
   ) {
-    return this.organizationService.create(dto)
+    return this.organizationService.create(dto, req.user.internalId)
   }
 
   // GET ALL AS SUPERADMIN
@@ -127,8 +128,9 @@ export class OrganizationController {
   update(
     @Param('organizationId') organizationId: string,
     @Body() dto: UpdateOrganizationDto,
+    @Req() req,
   ) {
-    return this.organizationService.update(organizationId, dto);
+    return this.organizationService.update(organizationId, dto, req.user.internalId);
   }
 
   // UPDATE ORGANIZATION ACTION PERMISSIONS
@@ -141,11 +143,12 @@ export class OrganizationController {
   updateOrganizationActionPermissions(
     @Param('organizationId') organizationId: string,
     @Body() dto: UpdateOrganizationActionPermissionsDto,
+    @Req() req,
   ){
     if(!dto.createPermission && !dto.invitePermission){
       return
     }
-    return this.organizationService.updateOrganizationActionPermissions(organizationId, dto)
+    return this.organizationService.updateOrganizationActionPermissions(organizationId, dto, req.user.internalId)
   }
 
   // ADD USER TO ORGANIZATION
@@ -170,11 +173,12 @@ export class OrganizationController {
   })
   @ApiResponse({ status: 200, description: 'User added successfully' })
   addUser(
+    @Req() req,
     @Param('organizationId') organizationId: string,
     @Param('userId') userId: string,
     @Body('organizationRole') organizationRole?: OrganizationRole,
   ){
-    return this.organizationService.addUserToOrganization(organizationId, userId, organizationRole)
+    return this.organizationService.addUserToOrganization(organizationId, userId, req.user.internalId, organizationRole)
   }
 
   // GET MY ORGANIZATIONS
@@ -227,8 +231,9 @@ export class OrganizationController {
   changeUserRole(
     @Param('organizationId') organizationId: string,
     @Param('userId') userId: string,
+    @Req() req,
   ) {
-    return this.organizationService.changeUserRole(userId, organizationId);
+    return this.organizationService.changeUserRole(userId, organizationId, req.user.internalId);
   }
 
   // REMOVE USER FROM ORGANIZATION
@@ -242,8 +247,9 @@ export class OrganizationController {
   deleteUserFromOrganization(
     @Param('userId') userId: string,
     @Param('organizationId') organizationId: string,
+    @Req() req,
   ){
-    return this.organizationService.removeUserFromOrganization(organizationId, userId)
+    return this.organizationService.removeUserFromOrganization(organizationId, userId, req.user.internalId)
   }
 
   // REMOVE SELF FROM ORGANIZATION

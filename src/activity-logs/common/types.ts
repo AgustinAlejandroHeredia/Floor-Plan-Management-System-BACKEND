@@ -1,12 +1,7 @@
 export enum ActionType {
 
-    JOIN_ORGANIZATION = "join organization",
-
     SEND_INVITATION = "send invitation",
     DELETE_INVIATION = "delete invitation",
-
-    ADD_USER = "add user",
-    KICK_USER = "kick user",
 
     CHANGE_ACTION_PERMISSIONS = "change actions permissions",
     CHANGE_USER_ORGANIZATION_ROLE = "change user organization role",
@@ -14,11 +9,18 @@ export enum ActionType {
 
     CREATE_ORGANIZATION = "create organization",
     EDIT_ORGANIZATION = "edit organization",
+    EDIT_ORGANIZATION_PERMISSIONS = "edit organization permissions",
     DELETE_ORGANIZATION = "delete organization",
+    EDIT_ORGANIZATION_USER_ROLE = "update organization user role",
+    JOIN_ORGANIZATION = "join organization",
+    ADD_USER_TO_ORGANIZATION = "add user",
+    KICK_USER_FROM_ORGANIZATION = "kick user",
+    LEAVE_ORGANIZATION = "user left organization",
 
     CREATE_PROJECT = "create new project",
     EDIT_PROJECT = "edit project",
     DELETE_PROJECT = "delete project",
+    EDIT_PROJECT_USER_ROLE = "update project user role",
 
     UPLOAD_BLUEPRINT = "upload blueprint",
     EDIT_BLUEPRINT = "edit blueprint",

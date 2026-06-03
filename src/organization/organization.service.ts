@@ -16,6 +16,8 @@ import { OrganizationRole, UserRole } from 'src/user/common/role.enum';
 import { ProjectMembershipService } from 'src/project_membership/project_membership.service';
 import { OrganizationActionPermission } from 'src/organization/common/orgPermission.enum';
 import { OrganizationWithRoles } from './common/types';
+import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
+import { ActionType } from 'src/activity-logs/common/types';
 
 @Injectable()
 export class OrganizationService {
@@ -25,11 +27,13 @@ export class OrganizationService {
     private readonly organizationModel: Model<OrganizationDocument>,
     private readonly organizationMembershipService: OrganizationMembershipService,
     private readonly projectMembershipService: ProjectMembershipService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   // CREATE
   async create(
     createDto: CreateOrganizationDto,
+    userId: string,
   ): Promise<Organization> {
     try {
       // Crear la organización
@@ -50,6 +54,14 @@ export class OrganizationService {
           'Error creating organization membership for the creator',
         );
       }
+
+      // ACTIVITY LOG
+      this.activityLogsService.create(userId, {
+        action: ActionType.CREATE_ORGANIZATION,
+        description: `Organization created with the name "${savedOrganization.name}".`,
+        targetName: `${savedOrganization.name}`,
+        targetId: `${savedOrganization.id}`
+      })
 
       return savedOrganization;
 
@@ -125,6 +137,7 @@ export class OrganizationService {
   async update(
     id: string,
     updateDto: UpdateOrganizationDto,
+    userId: string,
   ): Promise<OrganizationDocument> {
     const { name, contactEmail, contactPhone } = updateDto;
 
@@ -173,6 +186,14 @@ export class OrganizationService {
         throw new NotFoundException('Organization not found');
       }
 
+      // ACTIVITY LOG
+      this.activityLogsService.create(userId, {
+        action: ActionType.EDIT_ORGANIZATION,
+        description: `Organization edited with the name "${updated.name}".`,
+        targetName: `${updated.name}`,
+        targetId: `${updated.id}`
+      })
+
       return updated;
     } catch (error: any) {
       if (error.code === 11000) {
@@ -185,8 +206,12 @@ export class OrganizationService {
   async updateOrganizationActionPermissions(
     id: string,
     updatePermissionsDto: UpdateOrganizationActionPermissionsDto,
+    userId: string,
   ): Promise<void> {
     try {
+
+      const current = await this.organizationModel.findById(new Types.ObjectId(id))
+
       const updated = await this.organizationModel.findByIdAndUpdate(
         new Types.ObjectId(id),
         updatePermissionsDto,
@@ -195,6 +220,15 @@ export class OrganizationService {
       if (!updated) {
         throw new NotFoundException('Organization not found');
       }
+
+      // ACTIVITY LOG
+      this.activityLogsService.create(userId, {
+        action: ActionType.EDIT_ORGANIZATION_PERMISSIONS,
+        description: `Organization edited with the name "${updated.name}". Create permissions "${current?.createPermission}" -> "${updated.createPermission}. Invite permission "${current?.invitePermission}" -> "${updated.invitePermission}".`,
+        targetName: `${updated.name}`,
+        targetId: `${updated.id}`
+      })
+
       return 
     } catch (error: any) {
       if (error.code === 11000) {
@@ -261,11 +295,12 @@ export class OrganizationService {
   async addUserToOrganization(
     organizationId: string,
     userId: string,
+    adminUserId: string,
     organizationRole?: OrganizationRole,
   ): Promise<OrganizationMembership> {
 
     // ORG EXISTS?
-    await this.findOne(organizationId);
+    const organization = await this.findOne(organizationId);
 
     // DEFAULT : MEMBER
     let role = OrganizationRole.MEMBER
@@ -273,11 +308,21 @@ export class OrganizationService {
       role = organizationRole
     }
 
-    return this.organizationMembershipService.create({
+    const orgMembership = await this.organizationMembershipService.create({
       userId,
       organizationId,
       organizationRole: role,
     });
+
+    // ACTIVITY LOG
+    this.activityLogsService.create(adminUserId, {
+      action: ActionType.ADD_USER_TO_ORGANIZATION,
+      description: `Added user to the orgnaization "${organization.name}".`,
+      targetName: "new membership",
+      targetId: `${orgMembership._id}`
+    })
+
+    return orgMembership
   }
 
 
@@ -285,13 +330,18 @@ export class OrganizationService {
   async removeUserFromOrganization(
     organizationId: string,
     userId: string,
+    orgAdminUserId?: string,
   ): Promise<void> {
 
     console.log("REMOVING USER ", userId, " FROM THE ORGANIZATION ", organizationId)
 
     // verificar que la org exista
-    await this.organizationModel.findOne(new Types.ObjectId(organizationId));
+    const organization = await this.organizationModel.findOne(new Types.ObjectId(organizationId));
     console.log("ORGANIZATION EXISTS")
+
+    if(!organization){
+      throw new NotFoundException("Organization not found")
+    }
 
     // expulsa al user de todos los proyectos de esa organizacion
     
@@ -306,6 +356,24 @@ export class OrganizationService {
       organizationId,
     )
     console.log("USER KICKED FROM ORGANIZATION")
+
+    if(orgAdminUserId){
+      // USER WAS KICKED
+      this.activityLogsService.create(orgAdminUserId, {
+        action: ActionType.KICK_USER_FROM_ORGANIZATION,
+        description: `User was kicked from the organization "${organization.name}".`,
+        targetName: "kicked user",
+        targetId: "deleted membershio"
+      })
+    } else {
+      // USER LEFT
+      this.activityLogsService.create(userId, {
+        action: ActionType.LEAVE_ORGANIZATION,
+        description: `The user left the organization "${organization.name}".`,
+        targetName: "user left",
+        targetId: "deleted membership"
+      })
+    }
   }
 
 
@@ -313,6 +381,7 @@ export class OrganizationService {
   async changeUserRole(
     userId: string,
     organizationId: string,
+    orgAdminUserId: string,
   ): Promise<OrganizationMembership> {
 
     // verificar que exista la membership
@@ -331,6 +400,14 @@ export class OrganizationService {
     } else {
       currentRole = "member"
     }
+
+    // ACTIVITY LOG
+    this.activityLogsService.create(orgAdminUserId, {
+      action: ActionType.EDIT_ORGANIZATION_USER_ROLE,
+      description: `Edit organization user role. User role "${membership.organizationRole}" -> "${currentRole}"`,
+      targetName: "edit organization role",
+      targetId: `${membership._id}`
+    })
 
     return this.organizationMembershipService.updateRole(
       membership._id.toString(),

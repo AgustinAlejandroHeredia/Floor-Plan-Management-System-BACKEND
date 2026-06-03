@@ -8,6 +8,7 @@ import { Blueprint, BlueprintSchema } from 'src/blueprint/schemas/blueprint.sche
 import { Organization, OrganizationSchema } from 'src/organization/schemas/organization.schema';
 import { OrganizationModule } from 'src/organization/organization.module';
 import { OrganizationMembershipModule } from 'src/organization_membership/organization_membership.module';
+import { ActivityLogsModule } from 'src/activity-logs/activity-logs.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { OrganizationMembershipModule } from 'src/organization_membership/organi
     OrganizationMembershipModule,
     ProjectMembershipModule,
     OrganizationModule,
+    ActivityLogsModule,
   ],
   controllers: [ProjectController],
   providers: [ProjectService],

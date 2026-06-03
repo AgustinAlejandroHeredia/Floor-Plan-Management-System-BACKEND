@@ -12,6 +12,8 @@ import { Organization, OrganizationDocument } from 'src/organization/schemas/org
 import { ProjectUserList } from './common/types';
 import { OrganizationService } from 'src/organization/organization.service';
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
+import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
+import { ActionType } from 'src/activity-logs/common/types';
 
 @Injectable()
 export class ProjectService {
@@ -24,6 +26,7 @@ export class ProjectService {
     @InjectModel(Blueprint.name) private blueprintModel: Model<BlueprintDocument>,
     @InjectModel(Organization.name) private organizationModel: Model<OrganizationDocument>,
     private readonly organizationService: OrganizationService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
 
@@ -61,6 +64,15 @@ export class ProjectService {
         projectRole: ProjectRole.CREATOR, // assigns creator role to this user for this project
         organizationId, // for check
       })
+
+      // ACTIVITY LOG
+      this.activityLogsService.create(creatorUserId, {
+        action: ActionType.CREATE_PROJECT,
+        description: `Project created with the name "${savedProject.projectName}".`,
+        targetName: `${savedProject.projectName}`,
+        targetId: `${savedProject._id}`
+      })
+
     } catch (error) {
 
       // rollback
@@ -135,6 +147,15 @@ export class ProjectService {
       { new: true, runValidators: true }
     ).lean()
     if (!updated) throw new NotFoundException('Project not found')
+
+    // ACTIVITY LOG
+    this.activityLogsService.create(userId, {
+      action: ActionType.EDIT_PROJECT,
+      description: `Project edited with the name "${updated.projectName}".`,
+      targetName: `${updated.projectName}`,
+      targetId: `${updated._id}`
+    })
+
     return updated
   }
 

@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose/dist/mongoose.module';
 import { Organization, OrganizationSchema } from './schemas/organization.schema';
 import { OrganizationMembershipModule } from 'src/organization_membership/organization_membership.module';
 import { ProjectMembershipModule } from 'src/project_membership/project_membership.module';
+import { ActivityLogsModule } from 'src/activity-logs/activity-logs.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ProjectMembershipModule } from 'src/project_membership/project_membersh
     ]),
     OrganizationMembershipModule,
     ProjectMembershipModule,
+    ActivityLogsModule,
   ],
   controllers: [OrganizationController],
   providers: [OrganizationService],
