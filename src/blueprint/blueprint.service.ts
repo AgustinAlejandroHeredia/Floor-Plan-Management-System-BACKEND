@@ -12,7 +12,6 @@ import { CreateBlueprintDto } from './dto/create-blueprint.dto';
 import { UpdateBlueprintDto } from './dto/update-blueprint.dto';
 import { FileStorageService, StoredFile } from 'src/file-storage/file-storage.service';
 import { ThumbnailService } from 'src/thumbnail/thumbnail.service';
-import { ProjectService } from 'src/project/project.service';
 
 import { randomUUID } from "crypto";
 import axios from 'axios';
@@ -20,6 +19,7 @@ import { UpdateSectionViewsDto } from './dto/update-section-views';
 import { UserRole } from 'src/user/common/role.enum';
 import { Organization, OrganizationDocument } from 'src/organization/schemas/organization.schema';
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
+import { Project, ProjectDocument } from 'src/project/schemas/project.schema';
 
 @Injectable()
 export class BlueprintService {
@@ -28,9 +28,10 @@ export class BlueprintService {
     private blueprintModel: Model<BlueprintDocument>,
     @InjectModel(Organization.name)
     private organizationModel: Model<OrganizationDocument>,
+    @InjectModel(Project.name)
+    private projectModel: Model<ProjectDocument>,
     private readonly storageService: FileStorageService,
     private readonly thumbnailService: ThumbnailService,
-    private readonly projectService: ProjectService,
     private readonly organizationMembershipService: OrganizationMembershipService,
   ) {}
 
@@ -165,7 +166,7 @@ export class BlueprintService {
       blueprint.filename,
     )
 
-    const project = await this.projectService.findOne(blueprint.projectId.toString());
+    const project = await this.projectModel.findById(blueprint.projectId)
 
     const projectFields = {
       levels: project?.levels,
@@ -546,5 +547,105 @@ export class BlueprintService {
     }
 
     return updatedblueprint;
+  }
+
+  async getUserUploads(
+    userId: string,
+    userGlobalRole: string,
+  ) {
+    const userObjectId = new Types.ObjectId(userId);
+
+    // 1. blueprints
+    const blueprints = await this.blueprintModel
+      .find({ uploadedBy: userObjectId })
+      .sort({ creationDate: -1 })
+      .lean()
+
+    if (!blueprints.length) return []
+
+    // 2. organizations
+    const organizationIds = [
+      ...new Set(blueprints.map(bp => bp.organizationId.toString())),
+    ]
+
+    // ACCESS CHECK
+    await Promise.all(
+      organizationIds.map((orgId) =>
+        this.organizationMembershipService.validateOrganizationAccess(
+          userId,
+          orgId,
+          userGlobalRole,
+        ),
+      ),
+    )
+
+    const organizations = await this.organizationModel.find(
+      { _id: { $in: organizationIds } },
+      { name: 1 },
+    )
+
+    const organizationMap = new Map(
+      organizations.map(org => [org._id.toString(), org.name]),
+    )
+
+    // 3. response
+    return Promise.all(
+      blueprints.map(async (bp) => ({
+        _id: bp._id.toString(),
+        blueprintName: bp.blueprintName,
+        filename: bp.filename,
+        creationDate: bp.creationDate,
+        organizationId: bp.organizationId.toString(),
+        organizationName:
+          organizationMap.get(bp.organizationId.toString()) ?? "undefined",
+
+        processed: (bp.sectionViews?.length ?? 0) > 0,
+
+        thumbnailUrl: await this.storageService.getSignedDownloadUrl(
+          this.thumbnailService.getThumbnailName(bp.filename),
+        ),
+      })),
+    )
+  }
+
+  async getBlueprintProjectInfo(
+    blueprintId: string,
+    userId: string,
+    userGlobalRole: string,
+  ): Promise<{
+    projectId: string;
+    projectName: string;
+  }> {
+
+    const blueprint = await this.blueprintModel.findById(
+      new Types.ObjectId(blueprintId),
+    );
+
+    if (!blueprint) {
+      throw new NotFoundException('Blueprint not found');
+    }
+
+    // Validar acceso a la organización
+    await this.organizationMembershipService.validateOrganizationAccess(
+      userId,
+      blueprint.organizationId.toString(),
+      userGlobalRole,
+    );
+
+    const project = await this.projectModel.findById(
+      blueprint.projectId,
+      {
+        projectName: 1,
+      }
+    )
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    return {
+      projectId: project._id.toString(),
+      projectName: project.projectName,
+    };
   }
 }

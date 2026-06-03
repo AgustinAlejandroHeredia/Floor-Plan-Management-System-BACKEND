@@ -12,19 +12,20 @@ import { OrganizationMembership, OrganizationMembershipSchema } from 'src/organi
 import { ProjectMembership, ProjectMembershipSchema } from 'src/project_membership/schemas/project_membership.schema';
 import { OrganizationMembershipModule } from 'src/organization_membership/organization_membership.module';
 import { Organization, OrganizationSchema } from 'src/organization/schemas/organization.schema';
+import { Project, ProjectSchema } from 'src/project/schemas/project.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Blueprint.name, schema: BlueprintSchema },
       { name: Organization.name, schema: OrganizationSchema },
+      { name: Project.name, schema: ProjectSchema },
       // FOR THE AUTH MODULE
       { name: OrganizationMembership.name, schema: OrganizationMembershipSchema },
       { name: ProjectMembership.name, schema: ProjectMembershipSchema },
     ]),
     FileStorageModule,
     ThumbnailModule,
-    ProjectModule,
     InferenceJobModule,
     OrganizationMembershipModule,
     AuthModule,

@@ -254,4 +254,23 @@ export class BlueprintController {
     return blueprint;
   }
 
-}
+  @Get('me/myUploads')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get user uploads' })
+  async getUserUploads(
+    @Req() req,
+  ){
+    return this.blueprintService.getUserUploads(req.user.internalId, req.user.globalRole)
+  }
+
+  @Get('blueprintUrlPage/:blueprintId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get blueprint url for the web page' })
+  async getBlueprintProjectInfo (
+    @Param('blueprintId') blueprintId: string,
+    @Req() req,
+  ) {
+    return this.blueprintService.getBlueprintProjectInfo(blueprintId, req.user.internalId, req.user.globalRole)
+  }
+
+} 
