@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
@@ -12,7 +12,7 @@ import { Organization, OrganizationDocument } from './schemas/organization.schem
 // RELATIONS
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 import { OrganizationMembership } from 'src/organization_membership/schemas/organization_membership.schema';
-import { OrganizationRole } from 'src/user/common/role.enum';
+import { OrganizationRole, UserRole } from 'src/user/common/role.enum';
 import { ProjectMembershipService } from 'src/project_membership/project_membership.service';
 import { OrganizationActionPermission } from 'src/organization/common/orgPermission.enum';
 import { OrganizationWithRoles } from './common/types';
@@ -105,15 +105,15 @@ export class OrganizationService {
     return organization;
   }
 
-  async getOrganizationActionPermissions(id: string): Promise<({
+  async getOrganizationActionPermissions(organizationId: string): Promise<({
     createPermission: OrganizationActionPermission,
     invitePermission: OrganizationActionPermission,
   })> {
     const organization = await this.organizationModel
-      .findById(new Types.ObjectId(id))
+      .findById(new Types.ObjectId(organizationId))
       .lean()
     if(!organization){
-      throw new Error("Organization not found")
+      throw new NotFoundException("Organization not found")
     }
     return {
       createPermission: organization.createPermission,
@@ -267,7 +267,7 @@ export class OrganizationService {
     // ORG EXISTS?
     await this.findOne(organizationId);
 
-    // DEFAILT : MEMBER
+    // DEFAULT : MEMBER
     let role = OrganizationRole.MEMBER
     if(organizationRole) {
       role = organizationRole

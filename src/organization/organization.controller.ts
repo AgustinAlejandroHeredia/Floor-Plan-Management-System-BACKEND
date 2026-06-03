@@ -40,7 +40,8 @@ export class OrganizationController {
 
   // CREATE
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UserRoles(UserRole.SUPERADMIN)
   @ApiOperation({ summary: 'Create organization' })
   @ApiResponse({ status: 201, description: 'Organization created successfully' })
   @ApiBody({
@@ -59,23 +60,24 @@ export class OrganizationController {
   create(
     @Body() dto: CreateOrganizationDto,
   ) {
-    return this.organizationService.create(dto);
+    return this.organizationService.create(dto)
   }
 
-  // GET ALL
+  // GET ALL AS SUPERADMIN
   @Get('/allOrganizations/superadmin')
   @UseGuards(JwtAuthGuard, AccessGuard)
   @UserRoles(UserRole.SUPERADMIN)
-  @ApiOperation({ summary: 'Get all organizations' })
+  @ApiOperation({ summary: 'Get all organizations - superadmin users only' })
   @ApiResponse({ status: 200, description: 'Organizations list' })
   findAll() {
     return this.organizationService.findAll();
   }
 
-  // GET ALL ORGANIZATION MEMBERS 
+  // GET ALL ORGANIZATION MEMBERS AS ORGANIZATION ADMIN
   @Get('/allMembers/admin/:organizationId')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all members for the organization as admin' })
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @OrganizationRoles(OrganizationRole.ADMIN)
+  @ApiOperation({ summary: 'Get all members for the organization - organization admin users only' })
   @ApiParam({ name: 'organizationId', type: String })
   @ApiResponse({ status: 200, description: 'Organization member list obtained successfully' })
   getOrganizationMemberListAsAdmin(
@@ -85,59 +87,72 @@ export class OrganizationController {
   }
 
   // GET ONE
-  @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get organization by id' })
+  @Get(':organizationId')
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @OrganizationRoles(
+    OrganizationRole.ADMIN,
+    OrganizationRole.MEMBER,
+  )
+  @ApiOperation({ summary: 'Get organization by id - all organization members' })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({ status: 200, description: 'Organization found' })
   @ApiResponse({ status: 404, description: 'Organization not found' })
-  findOne(@Param('id') id: string) {
-    return this.organizationService.findOne(id);
+  findOne(@Param('organizationId') organizationId: string) {
+    return this.organizationService.findOne(organizationId);
   }
 
   // GET ORGANIZATION ACTION PERMISSIONS
-  @Get('/actionPermissions/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get organization action permissions' })
+  @Get('/actionPermissions/:organizationId')
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @OrganizationRoles(
+    OrganizationRole.ADMIN,
+    OrganizationRole.MEMBER,
+  )
+  @ApiOperation({ summary: 'Get organization action permissions - all organization members' })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({ status: 200, description: 'Organization action permissions obtained successfully' })
-  getOrganizationActionPermissions(@Param('id') id: string){
-    return this.organizationService.getOrganizationActionPermissions(id)
+  getOrganizationActionPermissions(
+    @Param('organizationId') organizationId: string
+  ){
+    return this.organizationService.getOrganizationActionPermissions(organizationId)
   }
 
   // UPDATE
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Update organization' })
+  @Patch(':organizationId')
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UserRoles(UserRole.SUPERADMIN)
+  @ApiOperation({ summary: 'Update organization - only superadmin users' })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({ status: 200, description: 'Organization updated successfully' })
   update(
-    @Param('id') id: string,
+    @Param('organizationId') organizationId: string,
     @Body() dto: UpdateOrganizationDto,
   ) {
-    return this.organizationService.update(id, dto);
+    return this.organizationService.update(organizationId, dto);
   }
 
   // UPDATE ORGANIZATION ACTION PERMISSIONS
-  @Patch('actionPermissions/admin/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Update organization action permissions as admin' })
-  @ApiParam({ name: 'id', type: String })
+  @Patch('actionPermissions/admin/:organizationId')
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @OrganizationRoles(OrganizationRole.ADMIN)
+  @ApiOperation({ summary: 'Update organization action permissions as organization admin' })
+  @ApiParam({ name: 'organizationId', type: String })
   @ApiResponse({ status: 200, description: 'Organization action permissions updated successfully' })
   updateOrganizationActionPermissions(
-    @Param('id') id: string,
+    @Param('organizationId') organizationId: string,
     @Body() dto: UpdateOrganizationActionPermissionsDto,
   ){
     if(!dto.createPermission && !dto.invitePermission){
       return
     }
-    return this.organizationService.updateOrganizationActionPermissions(id, dto)
+    return this.organizationService.updateOrganizationActionPermissions(organizationId, dto)
   }
 
   // ADD USER TO ORGANIZATION
   @Post('addUser/:organizationId/:userId')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Adds user to this organization' })
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UserRoles(UserRole.SUPERADMIN)
+  @ApiOperation({ summary: 'Adds user to this organization - only superadmin users' })
   @ApiParam({ name: 'userId', type: String })
   @ApiParam({ name: 'organizationId', type: String })
   @ApiBody({
@@ -165,7 +180,7 @@ export class OrganizationController {
   // GET MY ORGANIZATIONS
   @Get('me/organizations')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all my organizations' })
+  @ApiOperation({ summary: 'Get all my organizations - all web page users' })
   @ApiResponse({ status: 200, description: 'All my organizations obtained successfully' })
   getMyOrganizations(
     @Req() req,
@@ -176,7 +191,7 @@ export class OrganizationController {
   // GET MY ORGANIZATIONS WITH ROLES
   @Get('me/organizationsAndRoles')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all my organizations and it roles' })
+  @ApiOperation({ summary: 'Get all my organizations and it roles - all web page users' })
   @ApiResponse({ status: 200, description: 'All my organizations obtained successfully' })
   getMyOrganizationWithRoles(
     @Req() req,
@@ -186,8 +201,12 @@ export class OrganizationController {
 
   // GET MY ORGANIZATION ROLE
   @Get('me/role/:organizationId')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get my role with organization id' })
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @OrganizationRoles(
+    OrganizationRole.ADMIN,
+    OrganizationRole.MEMBER,
+  )
+  @ApiOperation({ summary: 'Get my role with organization id - only organization member users' })
   @ApiParam({ name: 'organizationId', type: String })
   @ApiResponse({ status: 200, description: 'Role obtained successfully' })
   myProjectRole(
@@ -201,7 +220,7 @@ export class OrganizationController {
   @Patch('/membership/:organizationId/:userId/role')
   @UseGuards(JwtAuthGuard, AccessGuard)
   @OrganizationRoles(OrganizationRole.ADMIN)
-  @ApiOperation({ summary: 'Change the role of a user in a organization' })
+  @ApiOperation({ summary: 'Change the role of a user in a organization - only organization admin users' })
   @ApiParam({ name: 'organizationId', type: String })
   @ApiParam({ name: 'userId', type: String })
   @ApiResponse({ status: 200, description: 'Organization membership role updated successfully' })
@@ -216,7 +235,7 @@ export class OrganizationController {
   @Delete('/user/:userId/:organizationId')
   @UseGuards(JwtAuthGuard, AccessGuard)
   @OrganizationRoles(OrganizationRole.ADMIN)
-  @ApiOperation({ summary: 'Delete user from organization' })
+  @ApiOperation({ summary: 'Delete user from organization - only organization admin users' })
   @ApiParam({ name: 'userId', type: String })
   @ApiParam({ name: 'organizationId', type: String })
   @ApiResponse({ status: 200, description: 'User deleted from organization successfully' })
@@ -230,8 +249,11 @@ export class OrganizationController {
   // REMOVE SELF FROM ORGANIZATION
   @Delete('/me/:organizationId')
   @UseGuards(JwtAuthGuard, AccessGuard)
-  @OrganizationRoles(OrganizationRole.MEMBER)
-  @ApiOperation({ summary: 'Delete self from organization' })
+  @OrganizationRoles(
+    OrganizationRole.ADMIN,
+    OrganizationRole.MEMBER,
+  )
+  @ApiOperation({ summary: 'Delete self from organization - only organization members' })
   @ApiParam({ name: 'organizationId', type: String })
   @ApiResponse({ status: 200, description: 'User deleted from organization successfully' })
   leaveOrganization(
