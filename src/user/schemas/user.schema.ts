@@ -25,6 +25,12 @@ export class User {
     default: UserRole.NONE,
   })
   globalRole: UserRole;
+
+  @Prop({
+    type: Date,
+    default: Date.now
+  })
+  joinedAt: Date
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
