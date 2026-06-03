@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ProjectMembershipService } from './project_membership.service';
 import { MongooseModule } from '@nestjs/mongoose/dist/mongoose.module';
 import { ProjectMembership, ProjectMembershipSchema } from './schemas/project_membership.schema';

@@ -1,4 +1,4 @@
-import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Project, ProjectDocument } from './schemas/project.schema';
@@ -10,6 +10,8 @@ import { ProjectStatus } from 'src/project/common/status.enum';
 import { Blueprint, BlueprintDocument } from 'src/blueprint/schemas/blueprint.schema';
 import { Organization, OrganizationDocument } from 'src/organization/schemas/organization.schema';
 import { ProjectUserList } from './common/types';
+import { OrganizationService } from 'src/organization/organization.service';
+import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 
 @Injectable()
 export class ProjectService {
@@ -17,10 +19,11 @@ export class ProjectService {
 
   constructor(
     @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
-    @Inject(forwardRef(() => ProjectMembershipService))
+    private readonly organizationMembershipService: OrganizationMembershipService,
     private readonly projectMembershipService: ProjectMembershipService,
     @InjectModel(Blueprint.name) private blueprintModel: Model<BlueprintDocument>,
     @InjectModel(Organization.name) private organizationModel: Model<OrganizationDocument>,
+    private readonly organizationService: OrganizationService,
   ) {}
 
 
@@ -31,26 +34,33 @@ export class ProjectService {
     organizationId: string,
   ): Promise<Project> {
 
-    // Crear el proyecto
+    // Check for permissions
+    const myOrganizationRole = await this.organizationService.myOrganizationRole(creatorUserId, organizationId)
+    const organizationPermissions = await this.organizationService.getOrganizationActionPermissions(organizationId)
+    if(myOrganizationRole.toLowerCase() !== organizationPermissions.createPermission.toLowerCase()){
+      throw new ForbiddenException("access denied")
+    }
+
+    // Create project
     const createdProject = new this.projectModel({
       ...dto,
       status: ProjectStatus.PENDING,
       creatorUserId: new Types.ObjectId(creatorUserId),
       organizationId: new Types.ObjectId(organizationId),
       customFields: dto.customFields || {},
-    });
+    })
 
     const savedProject = await createdProject.save();
 
-    // Crear el ProjectMembership para el usuario que creó el proyecto
+    // Create projectMembership for the created project
     try {
 
       await this.projectMembershipService.create({
         userId: creatorUserId,
         projectId: savedProject._id.toString(),
-        projectRole: ProjectRole.CREATOR, // Se asigna como creador al que lo crea
-        organizationId, // Para check
-      });
+        projectRole: ProjectRole.CREATOR, // assigns creator role to this user for this project
+        organizationId, // for check
+      })
     } catch (error) {
 
       // rollback
@@ -70,18 +80,44 @@ export class ProjectService {
 
 
   // GET ONE
-  async findOne(id: string): Promise<Project> {
-    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('Project not found')
-    const project = await this.projectModel.findById(id).lean()
+  async findOne(
+    projectId: string,
+    userId: string,
+    userGlobalRole: string,
+  ): Promise<Project> {
+    if (!Types.ObjectId.isValid(projectId)) throw new NotFoundException('Project not found')
+    
+    const project = await this.projectModel.findById(projectId).lean()
     if (!project) throw new NotFoundException('Project not found')
+
+    const organizationId = project.organizationId.toString()
+
+    await this.organizationMembershipService.validateOrganizationAccess(userId, organizationId, userGlobalRole)
+
     return project
   }
 
   // UPDATE
-  async update(id: string, dto: UpdateProjectDto): Promise<Project> {
-    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('Project not found')
+  async update(
+    projectId: string, 
+    dto: UpdateProjectDto,
+    userId: string,
+  ): Promise<Project> {
+
+    if (!Types.ObjectId.isValid(projectId)) throw new NotFoundException('Project not found')
+    
+    const project = await this.projectModel.findById(new Types.ObjectId(projectId))
+    if(!project) throw new NotFoundException('Project not found')
+
+    // Check for permissions - edit permission comes from creation permission from organization
+    const myOrganizationRole = await this.organizationService.myOrganizationRole(userId, project.organizationId.toString())
+    const organizationPermissions = await this.organizationService.getOrganizationActionPermissions(project.organizationId.toString())
+    if(myOrganizationRole.toLowerCase() !== organizationPermissions.createPermission.toLowerCase()){
+      throw new ForbiddenException("access denied")
+    }
+    
     const updated = await this.projectModel.findByIdAndUpdate(
-      id,
+      projectId,
       dto,
       { new: true, runValidators: true }
     ).lean()

@@ -27,12 +27,16 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
-import { ProjectRole } from 'src/user/common/role.enum';
+import { OrganizationRole, ProjectRole, UserRole } from 'src/user/common/role.enum';
+import { AccessGuard } from 'src/auth/guards/access.guard';
+import { OrganizationRoles } from 'src/auth/decorators/organization-roles.decorator';
+import { UserRoles } from 'src/auth/decorators/user-roles.decorator';
 
 @ApiTags('Projects')
 @ApiBearerAuth('access-token')
 @Controller('projects')
 export class ProjectController {
+
   constructor(private readonly projectService: ProjectService) {}
 
   // CREATE
@@ -66,30 +70,35 @@ export class ProjectController {
     @Req() req,
     @Body() dto: CreateProjectDto,
   ) {
-    return this.projectService.create(dto, req.user.internalId, dto.organizationId);
+    return this.projectService.create(dto, req.user.internalId, dto.organizationId)
   }
 
   // GET ALL
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UserRoles(UserRole.SUPERADMIN)
   @ApiOperation({ summary: 'Get all projects' })
   @ApiResponse({ status: 200, description: 'Projects list' })
   findAll() {
-    return this.projectService.findAll();
+    return this.projectService.findAll()
   }
 
   // UPDATE
-  @Patch(':id')
+  @Patch(':projectId')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update project' })
-  @ApiParam({ name: 'id', type: String })
+  @ApiParam({ name: 'projectId', type: String })
   @ApiResponse({ status: 200, description: 'Project updated successfully' })
-  update(@Param('id') id: string, @Body() dto: UpdateProjectDto) {
-    return this.projectService.update(id, dto);
+  update(
+    @Param('projectId') projectId: string, 
+    @Body() dto: UpdateProjectDto,
+    @Req() req,
+  ) {
+    return this.projectService.update(projectId, dto, req.user.internalId)
   }
 
-  // DELETE USER FROM PROJECT
-  @Delete('user/:projectId')
+  // DELETE USER FROM PROJECT - not used for now, maybe future
+  @Delete('user/:userId/:projectId')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete user from project' })
   @ApiParam({ name: 'userId', type: String })
@@ -99,10 +108,10 @@ export class ProjectController {
     @Param('userId') userId: string,
     @Param('projectId') projectId: string,
   ){
-    return this.projectService.deleteUserFromProject(userId, projectId)
+    //return this.projectService.deleteUserFromProject(userId, projectId)
   }
 
-  // ADD USER TO PROJECT
+  // ADD USER TO PROJECT - not used for now, maybe future
   @Post('addUser/:projectId')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Adds user to this project' })
@@ -112,13 +121,17 @@ export class ProjectController {
     @Req() req,
     @Param('projectId') projectId: string,
   ){
-    return this.projectService.addUser(req.user.internalId, projectId)
+    //return this.projectService.addUser(req.user.internalId, projectId)
   }
 
   // MY PROJECTs BY oganizationId
   @Get('me/:organizationId')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all the projects for this user by organizationId' })
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @OrganizationRoles(
+    OrganizationRole.ADMIN,
+    OrganizationRole.MEMBER,
+  )
+  @ApiOperation({ summary: 'Get all the projects for this user by organizationId - only organization members' })
   @ApiParam({ name: 'organizationId', type: String })
   @ApiResponse({ status: 200, description: 'Projects obtained successfully' })
   projectsByUserAndOrganization(
@@ -129,8 +142,12 @@ export class ProjectController {
   }
 
   @Get('organizationProjects/:organizationId')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all the projects for this organizationId' })
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @OrganizationRoles(
+    OrganizationRole.ADMIN,
+    OrganizationRole.MEMBER,
+  )
+  @ApiOperation({ summary: 'Get all the projects for this organizationId - only organization members' })
   @ApiParam({ name: 'organizationId', type: String })
   @ApiResponse({ status: 200, description: 'All projects obtained successfully' })
   getAllProjectsByOrganizationId(
@@ -139,7 +156,7 @@ export class ProjectController {
     return this.projectService.getAllProjectsByOrganizationId(organizationId)
   }
 
-  // GET MY PROJECT ROLE
+  // GET MY PROJECT ROLE - not used for now, maybe future
   @Get('me/role/:projectId')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get my role with project id' })
@@ -149,10 +166,10 @@ export class ProjectController {
     @Req() req,
     @Param('projectId') projectId: string,
   ){
-    return this.projectService.myProjectRole(req.user.internalId, projectId)
+    // return this.projectService.myProjectRole(req.user.internalId, projectId)
   }
 
-  // UPDATE USER ROLE
+  // UPDATE USER ROLE - not used for now, maybe future
   @Patch('membership/:projectId/:userId/:newProjectRole')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Change the role of a user in a project' })
@@ -170,8 +187,7 @@ export class ProjectController {
         `Invalid project role. Must be one of: ${Object.values(ProjectRole).join(', ')}`,
       );
     }
-
-    return this.projectService.changeUserRoleByUserAndProject(userId, projectId, newProjectRole);
+    //return this.projectService.changeUserRoleByUserAndProject(userId, projectId, newProjectRole);
   }
 
   // GET USER PROJECTS AS SELF OR ADMIN
@@ -191,13 +207,13 @@ export class ProjectController {
   }
 
   // GET ONE
-  @Get(':id')
+  @Get(':projectId')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get project by id' })
-  @ApiParam({ name: 'id', type: String })
+  @ApiOperation({ summary: 'Get project by projectId' })
+  @ApiParam({ name: 'projectId', type: String })
   @ApiResponse({ status: 200, description: 'Project found' })
   @ApiResponse({ status: 404, description: 'Project not found' })
-  findOne(@Param('id') id: string) {
-    return this.projectService.findOne(id);
+  findOne(@Param('projectId') projectId: string) {
+    return this.projectService.findOne(projectId);
   }
 }
