@@ -24,10 +24,4 @@ export class ActivityLogsController {
     }
     throw new ForbiddenException ("Access denied")
   }
-
-  @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  findOne(@Param('id') id: string) {
-    return this.activityLogsService.findOne(+id);
-  }
 }

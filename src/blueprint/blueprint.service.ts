@@ -20,6 +20,8 @@ import { UserRole } from 'src/user/common/role.enum';
 import { Organization, OrganizationDocument } from 'src/organization/schemas/organization.schema';
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 import { Project, ProjectDocument } from 'src/project/schemas/project.schema';
+import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
+import { ActionType } from 'src/activity-logs/common/types';
 
 @Injectable()
 export class BlueprintService {
@@ -33,6 +35,7 @@ export class BlueprintService {
     private readonly storageService: FileStorageService,
     private readonly thumbnailService: ThumbnailService,
     private readonly organizationMembershipService: OrganizationMembershipService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   // CREATE (upload + mongo)
@@ -122,6 +125,14 @@ export class BlueprintService {
           }
         )
       }
+
+      // ACTIVITY LOG
+      this.activityLogsService.create(userId, {
+        action: ActionType.UPLOAD_BLUEPRINT,
+        description: `Blueprint is uploaded for the organization "${organization.name}".`,
+        targetName: `${savedBlueprint.blueprintName}`,
+        targetId: `${savedBlueprint.id}`
+      })
 
       return savedBlueprint
 
@@ -252,6 +263,14 @@ export class BlueprintService {
       { new: true },
     );
 
+    // ACTIVITY LOG
+    this.activityLogsService.create(userId, {
+      action: ActionType.EDIT_BLUEPRINT,
+      description: `Blueprint "${updated?.blueprintName}" is edited.`,
+      targetName: `${updated?.blueprintName}`,
+      targetId: `${updated?.id}`
+    })
+
     return updated;
   }
 
@@ -300,6 +319,14 @@ export class BlueprintService {
     ]);
 
     const failed = results.filter(r => r.status === 'rejected');
+
+    // ACTIVITY LOG
+    this.activityLogsService.create(userId, {
+      action: ActionType.DELETE_BLUEPRINT,
+      description: `Blueprint "${blueprint.blueprintName}" is deleted.`,
+      targetName: `${blueprint.blueprintName}`,
+      targetId: "none"
+    })
 
     return {
       message: 'Blueprint eliminado correctamente',
@@ -354,6 +381,14 @@ export class BlueprintService {
     const downloadUrl = await this.storageService.getSignedDownloadUrl(
       blueprint.filename,
     );
+
+    // ACTIVITY LOG
+    this.activityLogsService.create(userId, {
+      action: ActionType.DOWNLOAD_BLUEPRINT,
+      description: `Blueprint "${blueprint.blueprintName}" is downloaded.`,
+      targetName: `${blueprint.blueprintName}`,
+      targetId: `${blueprint._id}`,
+    })
 
     return {
       downloadUrl,
@@ -545,6 +580,14 @@ export class BlueprintService {
     if (!updatedblueprint) {
       throw new NotFoundException('Blueprint not found');
     }
+
+    // ACTIVITY LOG
+    this.activityLogsService.create(userId, {
+      action: ActionType.EDIT_BLUEPRINT_SECTIONVIEWS,
+      description: `Blueprint "${blueprint.blueprintName}"'s section views are updated.`,
+      targetName: `${blueprint.blueprintName}`,
+      targetId: `${blueprint._id}`,
+    })
 
     return updatedblueprint;
   }

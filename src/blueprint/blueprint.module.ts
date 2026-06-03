@@ -13,6 +13,7 @@ import { ProjectMembership, ProjectMembershipSchema } from 'src/project_membersh
 import { OrganizationMembershipModule } from 'src/organization_membership/organization_membership.module';
 import { Organization, OrganizationSchema } from 'src/organization/schemas/organization.schema';
 import { Project, ProjectSchema } from 'src/project/schemas/project.schema';
+import { ActivityLogsModule } from 'src/activity-logs/activity-logs.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { Project, ProjectSchema } from 'src/project/schemas/project.schema';
     InferenceJobModule,
     OrganizationMembershipModule,
     AuthModule,
+    ActivityLogsModule,
   ],
   controllers: [BlueprintController],
   providers: [

@@ -3,6 +3,7 @@ export enum ActionType {
     JOIN_ORGANIZATION = "join organization",
 
     SEND_INVITATION = "send invitation",
+    ADD_USER = "add user",
     KICK_USER = "kick user",
 
     CHANGE_ACTION_PERMISSIONS = "change actions permissions",
@@ -19,6 +20,8 @@ export enum ActionType {
 
     UPLOAD_BLUEPRINT = "upload blueprint",
     EDIT_BLUEPRINT = "edit blueprint",
+    EDIT_BLUEPRINT_SECTIONVIEWS = "update blueprint section views",
     DELETE_BLUEPRINT = "delete blueprint",
+    DOWNLOAD_BLUEPRINT = "download blueprint"
     
 }
