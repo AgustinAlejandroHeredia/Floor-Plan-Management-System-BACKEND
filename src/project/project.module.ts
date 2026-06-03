@@ -7,7 +7,7 @@ import { ProjectMembershipModule } from 'src/project_membership/project_membersh
 import { Blueprint, BlueprintSchema } from 'src/blueprint/schemas/blueprint.schema';
 import { Organization, OrganizationSchema } from 'src/organization/schemas/organization.schema';
 import { OrganizationModule } from 'src/organization/organization.module';
-import { OrganizationMembership } from 'src/organization_membership/schemas/organization_membership.schema';
+import { OrganizationMembershipModule } from 'src/organization_membership/organization_membership.module';
 
 @Module({
   imports: [
@@ -16,7 +16,7 @@ import { OrganizationMembership } from 'src/organization_membership/schemas/orga
       { name: Blueprint.name, schema: BlueprintSchema },
       { name: Organization.name, schema: OrganizationSchema },
     ]),
-    OrganizationMembership,
+    OrganizationMembershipModule,
     ProjectMembershipModule,
     OrganizationModule,
   ],

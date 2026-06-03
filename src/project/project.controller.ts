@@ -213,7 +213,10 @@ export class ProjectController {
   @ApiParam({ name: 'projectId', type: String })
   @ApiResponse({ status: 200, description: 'Project found' })
   @ApiResponse({ status: 404, description: 'Project not found' })
-  findOne(@Param('projectId') projectId: string) {
-    return this.projectService.findOne(projectId);
+  findOne(
+    @Param('projectId') projectId: string,
+    @Req() req,
+  ) {
+    return this.projectService.findOneWithVerification(projectId, req.user.internalId, req.user.globalRole);
   }
 }

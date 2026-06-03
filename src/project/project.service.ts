@@ -79,8 +79,8 @@ export class ProjectService {
   }
 
 
-  // GET ONE
-  async findOne(
+  // GET ONE WITH VERIFICATION
+  async findOneWithVerification(
     projectId: string,
     userId: string,
     userGlobalRole: string,
@@ -93,6 +93,19 @@ export class ProjectService {
     const organizationId = project.organizationId.toString()
 
     await this.organizationMembershipService.validateOrganizationAccess(userId, organizationId, userGlobalRole)
+
+    return project
+  }
+
+
+  // GET ONE
+  async findOne(
+    projectId: string,
+  ): Promise<Project> {
+    if (!Types.ObjectId.isValid(projectId)) throw new NotFoundException('Project not found')
+    
+    const project = await this.projectModel.findById(projectId).lean()
+    if (!project) throw new NotFoundException('Project not found')
 
     return project
   }
