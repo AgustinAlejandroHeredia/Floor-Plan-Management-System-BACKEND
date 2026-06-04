@@ -9,6 +9,7 @@ import { UserModule } from 'src/user/user.module';
 import { ActivityLogsModule } from 'src/activity-logs/activity-logs.module';
 import { User, UserSchema } from 'src/user/schemas/user.schema';
 import { Organization, OrganizationSchema } from 'src/organization/schemas/organization.schema';
+import { EmailModule } from 'src/email/email.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { Organization, OrganizationSchema } from 'src/organization/schemas/organ
     OrganizationModule,
     UserModule,
     ActivityLogsModule,
+    EmailModule,
   ],
   controllers: [InvitationController],
   providers: [InvitationService],

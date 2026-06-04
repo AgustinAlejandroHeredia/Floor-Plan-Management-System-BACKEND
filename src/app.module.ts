@@ -20,6 +20,7 @@ import { DeleteProjectModule } from './use-cases/project/delete-project/delete_p
 import { AiProcessingModule } from './ai-processing/ai-processing.module';
 import { InferenceJobModule } from './inference-job/inference-job.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -62,6 +63,8 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module';
     InferenceJobModule,
 
     ActivityLogsModule,
+
+    EmailModule,
 
   ],
   controllers: [AppController],

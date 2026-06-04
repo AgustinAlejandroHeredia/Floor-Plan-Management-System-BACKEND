@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { OrganizationRole } from 'src/user/common/role.enum';
 import { InjectModel } from '@nestjs/mongoose';
@@ -12,6 +12,7 @@ import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActionType } from 'src/activity-logs/common/types';
 import { User, UserDocument } from 'src/user/schemas/user.schema';
 import { Organization, OrganizationDocument } from 'src/organization/schemas/organization.schema';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class InvitationService {
@@ -27,6 +28,8 @@ export class InvitationService {
     private readonly organizationService: OrganizationService,
     private readonly userService: UserService,
     private readonly activityLogsService: ActivityLogsService,
+    // email module
+    private readonly emailService: EmailService,
   ) {}
 
   // 6 digits numeric code
@@ -35,101 +38,184 @@ export class InvitationService {
   }
 
   async create(
-    invitedBy: string, // USER CREATED THE INVITATION
+    invitedBy: string,
     createInvitationDto: CreateInvitationDto,
     userGlobalRole: string,
   ) {
-    console.log("USER ID RECIVED : ", invitedBy)
+    let savedInvitation: InvitationDocument | null = null
+
     try {
 
-      // user belongs to this organization?
-      await this.organizationMembershipService.validateOrganizationAccess(invitedBy, createInvitationDto.organizationId, userGlobalRole)
+      await this.organizationMembershipService.validateOrganizationAccess(
+        invitedBy,
+        createInvitationDto.organizationId,
+        userGlobalRole,
+      )
 
-      // SENDER BELONGS TO THE ORGANIZATION
-      const senderMembership = await this.organizationMembershipService.findByUserIdAndOrganizationId(invitedBy, createInvitationDto.organizationId)
-      if(!senderMembership){
+      const [senderMembership, org] = await Promise.all([
+        this.organizationMembershipService.findByUserIdAndOrganizationId(
+          invitedBy,
+          createInvitationDto.organizationId,
+        ),
+        this.organizationService.findOne(
+          createInvitationDto.organizationId,
+        ),
+      ])
+
+      if (!senderMembership) {
         throw new ConflictException(
           'User doesnt belong to this organization',
         )
       }
 
-      // INVITED USER DOES NOT BELONGS ALREDY TO THE ORGANIZATION
-      
+      if (!org) {
+        throw new NotFoundException(
+          'Organization not found',
+        )
+      }
 
-      // GETS ORGANIZATION INVITE PERMISION
-      const orgPermissions = await this.organizationService.getOrganizationActionPermissions(createInvitationDto.organizationId)
-      const orgInvitePermission = orgPermissions.invitePermission
-
-      // CHECKS IF THE PERMISSIONS ARE RIGHT (if organizacion invite permissions are "admins", an user with organizacionRole "member" is invalid)
-      if(
-        orgInvitePermission === OrganizationActionPermission.ADMINS &&
-        senderMembership.organizationRole !== OrganizationRole.ADMIN
-      ){
-        throw new InternalServerErrorException(
+      if (
+        org.invitePermission ===
+          OrganizationActionPermission.ADMINS &&
+        senderMembership.organizationRole !==
+          OrganizationRole.ADMIN
+      ) {
+        throw new ForbiddenException(
           'No permissions for this action',
         )
       }
 
-      const existingInvitation = await this.invitationModel.findOne({
-        organizationId: new Types.ObjectId(createInvitationDto.organizationId),
-        userEmail: createInvitationDto.userEmail.trim().toLocaleLowerCase()
-      })
-      console.log("INVITATION FOUND : ", existingInvitation)
+      const normalizedEmail =
+        createInvitationDto.userEmail
+          .trim()
+          .toLowerCase()
 
-      if(existingInvitation){
-        console.log("INVITATION ALREDY EXISTS")
-        throw new ConflictException('An invitation for this email and organization alredy exists.')
+      const existingInvitation =
+        await this.invitationModel.findOne({
+          organizationId: new Types.ObjectId(
+            createInvitationDto.organizationId,
+          ),
+          userEmail: normalizedEmail,
+        })
+
+      if (existingInvitation) {
+        throw new ConflictException(
+          'An invitation for this email and organization already exists.',
+        )
       }
-      console.log("INVITATION DOES NOT EXISTS")
 
-      // MAKES SURE THAT CODE DOES NOT COLLIDE / OVERLAPS WITH ANOTHER THAT EXISTS
-      let code = ''
+      let code: string
+
       do {
-        code = this.createCode();
+        code = this.createCode()
       } while (
         await this.invitationModel.exists({
           accessCode: code,
         })
       )
 
-      const invitation = new this.invitationModel({
+      savedInvitation =
+        await this.invitationModel.create({
+          organizationId: new Types.ObjectId(
+            createInvitationDto.organizationId,
+          ),
+          userEmail: normalizedEmail,
+          sentByUserId: new Types.ObjectId(
+            invitedBy,
+          ),
+          duration:
+            createInvitationDto.duration ?? 24,
+          userOrganizationRole:
+            createInvitationDto.userOrganizationRole ??
+            OrganizationRole.MEMBER,
+          accessCode: code,
+        })
 
-        organizationId: new Types.ObjectId(
-          createInvitationDto.organizationId,
-        ),
+      try {
 
-        userEmail: createInvitationDto.userEmail.trim().toLowerCase(),
+        await this.emailService.sendEmail(
+          savedInvitation.userEmail,
+          'Organization Invitation',
+          `
+            <h2>Organization Invitation</h2>
 
-        sentByUserId: new Types.ObjectId(invitedBy),
+            <p>
+              You have been invited to join the organization
+              <strong>${org.name}</strong> on the Floor Plan Management System platform.
+            </p>
 
-        duration: createInvitationDto.duration ?? 24,
+            <p>
+              To accept this invitation, please sign in to your account and navigate to the
+              <strong>"Join Organization"</strong> section on the Home page.
+            </p>
 
-        userOrganizationRole:
-          createInvitationDto.userOrganizationRole ??
-          OrganizationRole.MEMBER,
+            <p>
+              Enter the invitation token provided below:
+            </p>
 
-        accessCode: code,
-      })
+            <p>
+              <strong>${savedInvitation.accessCode}</strong>
+            </p>
 
-      const savedInvitation = await invitation.save()
+            <p>
+              Once the token has been successfully validated, you will automatically be granted access to the organization and its associated resources according to the permissions assigned to your invitation.
+            </p>
 
-      // ACTIVITY LOG
-      this.activityLogsService.create(invitedBy, {
-        action: ActionType.SEND_INVITATION,
-        description: `Invitation craeted for the user with emal "${savedInvitation.userEmail}" with "${savedInvitation.userOrganizationRole}" role.`,
-        targetName: `${savedInvitation.userEmail}`,
-        targetId: `${savedInvitation.id}`
-      })
+            <p>
+              If you believe you received this invitation in error, please disregard this email.
+            </p>
 
-      return savedInvitation;
+            <p>
+              Kind regards,<br />
+              Floor Plan Management System Team
+            </p>
+          `,
+        )
+
+      } catch (emailError) {
+
+        console.error(
+          'EMAIL ERROR:',
+          emailError,
+        )
+
+        await this.invitationModel.findByIdAndDelete(
+          savedInvitation._id,
+        )
+
+        throw new InternalServerErrorException(
+          'Invitation created but email could not be sent',
+        )
+      }
+
+      await this.activityLogsService.create(
+        invitedBy,
+        {
+          action: ActionType.SEND_INVITATION,
+          description:
+            `Invitation created for "${savedInvitation.userEmail}" with role "${savedInvitation.userOrganizationRole}".`,
+          targetName:
+            savedInvitation.userEmail,
+          targetId:
+            savedInvitation._id.toString(),
+        },
+      )
+
+      return savedInvitation
 
     } catch (error) {
-      console.log('ERROR CREATING INVITATION:', error)
+
+      console.log(
+        'ERROR CREATING INVITATION:',
+        error,
+      )
+
       if (error instanceof HttpException) {
-        throw error;
+        throw error
       }
+
       throw new InternalServerErrorException(
-        'Error creating invitation',
+        'Error creating / sending invitation',
       )
     }
   }
