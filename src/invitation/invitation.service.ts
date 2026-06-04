@@ -303,4 +303,24 @@ export class InvitationService {
       }
     })
   }
+
+  async refreshInvitation(
+    invitationId: string,
+  ) {
+    const invitation = await this.invitationModel.findByIdAndUpdate(
+      invitationId,
+      {
+        creationDate: new Date(),
+      },
+      {
+        new: true,
+      },
+    )
+
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found')
+    }
+
+    return invitation
+  }
 }
