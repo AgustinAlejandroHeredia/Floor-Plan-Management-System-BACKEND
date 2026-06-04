@@ -323,4 +323,76 @@ export class InvitationService {
 
     return invitation
   }
+
+  async getOrganizationInvitations(
+    organizationId: string,
+  ) {
+    const invitations = await this.invitationModel
+      .find({
+        organizationId: new Types.ObjectId(organizationId),
+      })
+      .sort({ creationDate: -1 })
+      .lean()
+
+    if (!invitations.length) {
+      return []
+    }
+
+    // Organización
+    const organization = await this.organizationModel
+      .findById(organizationId, { name: 1 })
+      .lean()
+
+    // Usuarios que enviaron invitaciones
+    const userIds = [
+      ...new Set(
+        invitations.map(inv => inv.sentByUserId.toString()),
+      ),
+    ]
+
+    const users = await this.userModel.find(
+      {
+        _id: { $in: userIds },
+      },
+      {
+        name: 1,
+      },
+    ).lean();
+
+    const userMap = new Map(
+      users.map(user => [
+        user._id.toString(),
+        user.name,
+      ]),
+    )
+
+    return invitations.map(inv => {
+
+      const expired =
+        Date.now() - new Date(inv.creationDate).getTime() >=
+        inv.duration * 60 * 60 * 1000;
+
+      return {
+        _id: inv._id.toString(),
+
+        organizationId: inv.organizationId.toString(),
+        organizationName:
+          organization?.name ?? 'Unknown organization',
+
+        userEmail: inv.userEmail,
+
+        sentByUserId: inv.sentByUserId.toString(),
+        sentByUserName:
+          userMap.get(inv.sentByUserId.toString()) ??
+          'Unknown user',
+
+        creationDate: inv.creationDate,
+        duration: inv.duration,
+        userOrganizationRole: inv.userOrganizationRole,
+
+        expired,
+      }
+    })
+  }
+
 }

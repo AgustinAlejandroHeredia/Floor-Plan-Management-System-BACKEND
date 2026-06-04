@@ -7,7 +7,7 @@ export type InvitationDocument = Invitation & Document;
 @Schema()
 export class Invitation {
 
-    @Prop({ required: true, type: Types.ObjectId, ref: 'Organization' })
+    @Prop({ required: true, type: Types.ObjectId, ref: 'Organization', index: true })
     organizationId: Types.ObjectId
 
     @Prop({ required: true })

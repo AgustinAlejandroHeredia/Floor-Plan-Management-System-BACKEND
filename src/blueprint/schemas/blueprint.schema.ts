@@ -73,7 +73,7 @@ export class Blueprint {
   @Prop({ required: true, type: Types.ObjectId, ref: 'Organization' })
   organizationId: Types.ObjectId;
 
-  @Prop({ required: true, type: String })
+  @Prop({ required: true, type: String, index: true })
   storageId: string;
 
   @Prop({ required: true, type: String })

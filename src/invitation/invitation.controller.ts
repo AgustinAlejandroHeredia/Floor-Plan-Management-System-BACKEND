@@ -9,8 +9,9 @@ import { AccessGuard } from 'src/auth/guards/access.guard';
 // SWAGGER
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
-import { UserRole } from 'src/user/common/role.enum';
+import { OrganizationRole, UserRole } from 'src/user/common/role.enum';
 import { UserRoles } from 'src/auth/decorators/user-roles.decorator';
+import { OrganizationRoles } from 'src/auth/decorators/organization-roles.decorator';
 
 @ApiTags('Invitations')
 @ApiBearerAuth('access-token')
@@ -59,5 +60,14 @@ export class InvitationController {
     @Param('invitationId') invitationId: string,
   ){
     return this.invitationService.refreshInvitation(invitationId)
+  }
+
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @OrganizationRoles(OrganizationRole.ADMIN)
+  @Get('admin/organizationInvitations/:organizationId')
+  getOrganizationInvitations(
+    @Param('organizationId') organizationId: string,
+  ){
+    return this.invitationService.getOrganizationInvitations(organizationId)
   }
 }
