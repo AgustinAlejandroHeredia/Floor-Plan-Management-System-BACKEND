@@ -28,6 +28,9 @@ import { ActivityLogsModule } from 'src/activity-logs/activity-logs.module';
   ],
   controllers: [UserController],
   providers: [UserService],
-  exports: [UserService]
+  exports: [
+    UserService,
+    MongooseModule,
+  ]
 })
 export class UserModule {}

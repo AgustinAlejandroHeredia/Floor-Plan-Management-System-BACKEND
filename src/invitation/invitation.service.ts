@@ -10,6 +10,8 @@ import { OrganizationMembershipService } from 'src/organization_membership/organ
 import { UserService } from 'src/user/user.service';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActionType } from 'src/activity-logs/common/types';
+import { User, UserDocument } from 'src/user/schemas/user.schema';
+import { Organization, OrganizationDocument } from 'src/organization/schemas/organization.schema';
 
 @Injectable()
 export class InvitationService {
@@ -17,6 +19,10 @@ export class InvitationService {
   constructor(
     @InjectModel(Invitation.name)
     private readonly invitationModel: Model<InvitationDocument>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
+    @InjectModel(Organization.name)
+    private readonly organizationModel: Model<OrganizationDocument>,
     private readonly organizationMembershipService: OrganizationMembershipService,
     private readonly organizationService: OrganizationService,
     private readonly userService: UserService,
@@ -216,5 +222,85 @@ export class InvitationService {
     await this.invitationModel.findByIdAndDelete(new Types.ObjectId(id))
 
     return {message: 'Invitation deleted successfully'}
+  }
+
+  async getAllInvitations() {
+    const invitations = await this.invitationModel
+      .find()
+      .sort({ creationDate: -1 })
+      .lean()
+
+    if (!invitations.length) {
+      return []
+    }
+
+    // Organizations
+    const organizationIds = [
+      ...new Set(
+        invitations.map(inv => inv.organizationId.toString())
+      ),
+    ]
+
+    // Users
+    const userIds = [
+      ...new Set(
+        invitations.map(inv => inv.sentByUserId.toString())
+      ),
+    ]
+
+    const [organizations, users] = await Promise.all([
+      this.organizationModel.find(
+        { _id: { $in: organizationIds } },
+        { name: 1 },
+      ).lean(),
+
+      this.userModel.find(
+        { _id: { $in: userIds } },
+        { name: 1 },
+      ).lean(),
+    ])
+
+    const organizationMap = new Map(
+      organizations.map(org => [
+        org._id.toString(),
+        org.name,
+      ]),
+    )
+
+    const userMap = new Map(
+      users.map(user => [
+        user._id.toString(),
+        user.name,
+      ]),
+    )
+
+    return invitations.map(inv => {
+
+      const expired =
+        Date.now() - new Date(inv.creationDate).getTime() >=
+        inv.duration * 60 * 60 * 1000;
+
+      return {
+        _id: inv._id.toString(),
+
+        organizationId: inv.organizationId.toString(),
+        organizationName:
+          organizationMap.get(inv.organizationId.toString()) ??
+          'Unknown organization',
+
+        userEmail: inv.userEmail,
+
+        sentByUserId: inv.sentByUserId.toString(),
+        sentByUserName:
+          userMap.get(inv.sentByUserId.toString()) ??
+          'Unknown user',
+
+        creationDate: inv.creationDate,
+        duration: inv.duration,
+        userOrganizationRole: inv.userOrganizationRole,
+
+        expired,
+      }
+    })
   }
 }
