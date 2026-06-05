@@ -93,8 +93,15 @@ export class InferenceJobService implements OnModuleInit {
     userGlobalRole: string,
   ): Promise<InferenceJobDocument> {
     const blueprint = await this.blueprintModel
-      .findById(blueprintId, { filename: 1 })
-      .lean();
+      .findById(
+        blueprintId,
+        {
+          filename: 1,
+          organizationId: 1,
+          blueprintName: 1,
+        },
+      )
+      .lean()
 
     if (!blueprint) {
       throw new NotFoundException('Blueprint not found');
