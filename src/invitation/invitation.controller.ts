@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, Query } from '@nestjs/common';
 import { InvitationService } from './invitation.service';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
 
@@ -49,8 +49,14 @@ export class InvitationController {
   @UseGuards(JwtAuthGuard, AccessGuard)
   @UserRoles(UserRole.SUPERADMIN)
   @Get('superadmin/allInvitations')
-  getAllInvitatinos(){
-    return this.invitationService.getAllInvitations()
+  getAllInvitatinos(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+  ) {
+    return this.invitationService.getAllInvitations(
+      Number(page),
+      Number(limit),
+    )
   }
 
   @UseGuards(JwtAuthGuard, AccessGuard)

@@ -18,6 +18,7 @@ import { OrganizationActionPermission } from 'src/organization/common/orgPermiss
 import { OrganizationWithRoles } from './common/types';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActionType } from 'src/activity-logs/common/types';
+import { User, UserDocument } from 'src/user/schemas/user.schema';
 
 @Injectable()
 export class OrganizationService {
@@ -25,6 +26,8 @@ export class OrganizationService {
   constructor(
     @InjectModel(Organization.name)
     private readonly organizationModel: Model<OrganizationDocument>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
     private readonly organizationMembershipService: OrganizationMembershipService,
     private readonly projectMembershipService: ProjectMembershipService,
     private readonly activityLogsService: ActivityLogsService,
@@ -83,6 +86,63 @@ export class OrganizationService {
       .find()
       .sort({ name: 1 })
       .lean()
+  }
+
+  // GET ALL ORGANIZATINOS WITH ALL IT MEMBERS EACH
+  async getAllOrganizationsWithMembers(
+    page: number,
+    limit: number,
+  ) {
+
+    const skip = (page - 1) * limit;
+
+    const [organizations, totalItems] = await Promise.all([
+      this.organizationModel
+        .find()
+        .sort({ name: 1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+
+      this.organizationModel.countDocuments(),
+    ]);
+
+    const organizationsWithMembers = await Promise.all(
+      organizations.map(async (organization) => {
+
+        const members =
+          await this.organizationMembershipService.findUsersByOrganization(
+            organization._id.toString(),
+          );
+
+        return {
+          ...organization,
+
+          _id: organization._id.toString(),
+
+          members: members.map(member => ({
+            _id: member.user._id.toString(),
+            name: member.user.name,
+            email: member.user.email,
+            picture: member.user.picture,
+            organizationRole: member.organizationRole,
+          })),
+        };
+      }),
+    );
+
+    return {
+      list: organizationsWithMembers,
+
+      page,
+      limit,
+
+      totalItems,
+
+      totalPages: Math.ceil(
+        totalItems / limit,
+      ),
+    };
   }
 
   // GET ALL MEMBERS OF THE ORGANIZATION AS ADMIN

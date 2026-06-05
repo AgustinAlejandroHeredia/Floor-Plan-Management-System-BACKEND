@@ -310,41 +310,76 @@ export class InvitationService {
     return {message: 'Invitation deleted successfully'}
   }
 
-  async getAllInvitations() {
-    const invitations = await this.invitationModel
-      .find()
-      .sort({ creationDate: -1 })
-      .lean()
+  async getAllInvitations(
+    page: number,
+    limit: number,
+  ) {
+    const skip = (page - 1) * limit
+
+    const [invitations, totalItems] =
+      await Promise.all([
+        this.invitationModel
+          .find()
+          .sort({ creationDate: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+
+        this.invitationModel.countDocuments(),
+      ])
 
     if (!invitations.length) {
-      return []
+      return {
+        list: [],
+        page,
+        limit,
+        totalItems,
+        totalPages: Math.ceil(
+          totalItems / limit,
+        ),
+      }
     }
 
-    // Organizations
     const organizationIds = [
       ...new Set(
-        invitations.map(inv => inv.organizationId.toString())
+        invitations.map(inv =>
+          inv.organizationId.toString(),
+        ),
       ),
     ]
 
-    // Users
     const userIds = [
       ...new Set(
-        invitations.map(inv => inv.sentByUserId.toString())
+        invitations.map(inv =>
+          inv.sentByUserId.toString(),
+        ),
       ),
     ]
 
-    const [organizations, users] = await Promise.all([
-      this.organizationModel.find(
-        { _id: { $in: organizationIds } },
-        { name: 1 },
-      ).lean(),
+    const [organizations, users] =
+      await Promise.all([
+        this.organizationModel
+          .find(
+            {
+              _id: {
+                $in: organizationIds,
+              },
+            },
+            { name: 1 },
+          )
+          .lean(),
 
-      this.userModel.find(
-        { _id: { $in: userIds } },
-        { name: 1 },
-      ).lean(),
-    ])
+        this.userModel
+          .find(
+            {
+              _id: {
+                $in: userIds,
+              },
+            },
+            { name: 1 },
+          )
+          .lean(),
+      ])
 
     const organizationMap = new Map(
       organizations.map(org => [
@@ -360,34 +395,59 @@ export class InvitationService {
       ]),
     )
 
-    return invitations.map(inv => {
+    return {
+      list: invitations.map(inv => {
 
-      const expired =
-        Date.now() - new Date(inv.creationDate).getTime() >=
-        inv.duration * 60 * 60 * 1000;
+        const expired =
+          Date.now() -
+            new Date(
+              inv.creationDate,
+            ).getTime() >=
+          inv.duration * 60 * 60 * 1000
 
-      return {
-        _id: inv._id.toString(),
+        return {
+          _id: inv._id.toString(),
 
-        organizationId: inv.organizationId.toString(),
-        organizationName:
-          organizationMap.get(inv.organizationId.toString()) ??
-          'Unknown organization',
+          organizationId:
+            inv.organizationId.toString(),
 
-        userEmail: inv.userEmail,
+          organizationName:
+            organizationMap.get(
+              inv.organizationId.toString(),
+            ) ??
+            'Unknown organization',
 
-        sentByUserId: inv.sentByUserId.toString(),
-        sentByUserName:
-          userMap.get(inv.sentByUserId.toString()) ??
-          'Unknown user',
+          userEmail: inv.userEmail,
 
-        creationDate: inv.creationDate,
-        duration: inv.duration,
-        userOrganizationRole: inv.userOrganizationRole,
+          sentByUserId:
+            inv.sentByUserId.toString(),
 
-        expired,
-      }
-    })
+          sentByUserName:
+            userMap.get(
+              inv.sentByUserId.toString(),
+            ) ?? 'Unknown user',
+
+          creationDate:
+            inv.creationDate,
+
+          duration: inv.duration,
+
+          userOrganizationRole:
+            inv.userOrganizationRole,
+
+          expired,
+        }
+      }),
+
+      page,
+      limit,
+
+      totalItems,
+
+      totalPages: Math.ceil(
+        totalItems / limit,
+      ),
+    }
   }
 
   async refreshInvitation(

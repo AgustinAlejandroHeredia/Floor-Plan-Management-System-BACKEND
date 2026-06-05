@@ -79,9 +79,17 @@ export class UserController {
   @Get('allUsers/superadmin')
   async getAllUsersAsSuperadmin(
     @Req() req,
-  ){
-    if(req.user.globalRole !== UserRole.SUPERADMIN) throw new ForbiddenException("Access denied")
-    return await this.userService.findAll()
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+  ) {
+    if (req.user.globalRole !== UserRole.SUPERADMIN) {
+      throw new ForbiddenException('Access denied')
+    }
+
+    return this.userService.findAllPaginated(
+      Number(page),
+      Number(limit),
+    )
   }
 
   @UseGuards(JwtAuthGuard)

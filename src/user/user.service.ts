@@ -64,8 +64,39 @@ export class UserService {
   // ======================
   // FIND ALL
   // ======================
-  async findAll(): Promise<User[]> {
-    return this.userModel.find();
+  async findAllPaginated(
+    page: number,
+    limit: number,
+  ) {
+    const skip = (page - 1) * limit
+
+    const [users, totalItems] =
+      await Promise.all([
+        this.userModel
+          .find()
+          .sort({ name: 1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+
+        this.userModel.countDocuments(),
+      ])
+
+    return {
+      list: users.map((user) => ({
+        ...user,
+        _id: user._id.toString(),
+      })),
+
+      page,
+      limit,
+
+      totalItems,
+
+      totalPages: Math.ceil(
+        totalItems / limit,
+      ),
+    }
   }
 
   // ======================

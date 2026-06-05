@@ -9,6 +9,7 @@ import {
   Patch,
   Req,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 
 import { OrganizationService } from './organization.service';
@@ -85,6 +86,19 @@ export class OrganizationController {
     @Param('organizationId') organizationId: string,
   ){
     return this.organizationService.getOrganizationMemberListAsAdmin(organizationId)
+  }
+
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UserRoles(UserRole.SUPERADMIN)
+  @Get('superadmin/organizations-with-members')
+  getAllOrganizationsWithMembers(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+  ) {
+    return this.organizationService.getAllOrganizationsWithMembers(
+      Number(page),
+      Number(limit),
+    );
   }
 
   // GET ONE
