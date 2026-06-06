@@ -73,7 +73,14 @@ export class InvitationController {
   @Get('admin/organizationInvitations/:organizationId')
   getOrganizationInvitations(
     @Param('organizationId') organizationId: string,
-  ){
-    return this.invitationService.getOrganizationInvitations(organizationId)
+
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+  ) {
+    return this.invitationService.getOrganizationInvitations(
+      organizationId,
+      Number(page),
+      Number(limit),
+    )
   }
 }

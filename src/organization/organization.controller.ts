@@ -79,13 +79,34 @@ export class OrganizationController {
   @Get('/allMembers/admin/:organizationId')
   @UseGuards(JwtAuthGuard, AccessGuard)
   @OrganizationRoles(OrganizationRole.ADMIN)
-  @ApiOperation({ summary: 'Get all members for the organization - organization admin users only' })
-  @ApiParam({ name: 'organizationId', type: String })
-  @ApiResponse({ status: 200, description: 'Organization member list obtained successfully' })
+  @ApiOperation({
+    summary:
+      'Get paginated members for the organization - organization admin users only',
+  })
+  @ApiParam({
+    name: 'organizationId',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Organization member list obtained successfully',
+  })
   getOrganizationMemberListAsAdmin(
-    @Param('organizationId') organizationId: string,
-  ){
-    return this.organizationService.getOrganizationMemberListAsAdmin(organizationId)
+    @Param('organizationId')
+    organizationId: string,
+
+    @Query('page')
+    page: number,
+
+    @Query('limit')
+    limit: number,
+  ) {
+    return this.organizationService.getOrganizationMemberListAsAdmin(
+      organizationId,
+      Number(page),
+      Number(limit),
+    );
   }
 
   @UseGuards(JwtAuthGuard, AccessGuard)

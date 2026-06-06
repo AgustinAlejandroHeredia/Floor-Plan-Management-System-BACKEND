@@ -147,13 +147,38 @@ export class ProjectController {
     OrganizationRole.ADMIN,
     OrganizationRole.MEMBER,
   )
-  @ApiOperation({ summary: 'Get all the projects for this organizationId - only organization members' })
-  @ApiParam({ name: 'organizationId', type: String })
-  @ApiResponse({ status: 200, description: 'All projects obtained successfully' })
+  @ApiOperation({
+    summary:
+      'Get all the projects for this organizationId - only organization members',
+  })
+  @ApiParam({
+    name: 'organizationId',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'All projects obtained successfully',
+  })
   getAllProjectsByOrganizationId(
-    @Param('organizationId') organizationId: string,
-  ){
-    return this.projectService.getAllProjectsByOrganizationId(organizationId)
+    @Req() req,
+
+    @Param('organizationId')
+    organizationId: string,
+
+    @Query('page')
+    page: number,
+
+    @Query('limit')
+    limit: number,
+  ) {
+    return this.projectService.getAllProjectsByOrganizationId(
+      organizationId,
+      Number(page),
+      Number(limit),
+      req.user.internalId,
+      req.user.globalRole,
+    );
   }
 
   // GET MY PROJECT ROLE - not used for now, maybe future

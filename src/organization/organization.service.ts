@@ -148,20 +148,74 @@ export class OrganizationService {
   // GET ALL MEMBERS OF THE ORGANIZATION AS ADMIN
   async getOrganizationMemberListAsAdmin(
     organizationId: string,
+    page: number,
+    limit: number,
   ) {
-    const members = await this.organizationMembershipService.findUsersByOrganization(
-      organizationId,
+    const members =
+      await this.organizationMembershipService.findUsersByOrganization(
+        organizationId,
+      );
+
+    const sortedMembers = members.sort(
+      (a, b) =>
+        a.user.name.localeCompare(
+          b.user.name,
+        ),
     );
 
-    return members
-      .sort((a, b) => a.user.name.localeCompare(b.user.name))
-      .map(({ user, organizationRole }) => ({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        picture: user.picture,
-        organizationRole: organizationRole.charAt(0).toLocaleUpperCase() + organizationRole.slice(1)
-      }));
+    const totalItems =
+      sortedMembers.length;
+
+    const totalPages =
+      Math.ceil(
+        totalItems / limit,
+      );
+
+    const skip =
+      (page - 1) * limit;
+
+    const paginatedMembers =
+      sortedMembers
+        .slice(
+          skip,
+          skip + limit,
+        )
+        .map(
+          ({
+            user,
+            organizationRole,
+          }) => ({
+            _id:
+              user._id.toString(),
+
+            name: user.name,
+
+            email:
+              user.email,
+
+            picture:
+              user.picture,
+
+            organizationRole:
+              organizationRole
+                .charAt(0)
+                .toUpperCase() +
+              organizationRole.slice(
+                1,
+              ),
+          }),
+        );
+
+    return {
+      list: paginatedMembers,
+
+      page,
+      limit,
+
+      totalItems,
+
+      totalPages,
+    };
   }
 
   // GET ONE

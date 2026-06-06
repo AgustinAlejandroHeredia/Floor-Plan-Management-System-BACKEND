@@ -472,38 +472,75 @@ export class InvitationService {
 
   async getOrganizationInvitations(
     organizationId: string,
+    page: number,
+    limit: number,
   ) {
-    const invitations = await this.invitationModel
-      .find({
-        organizationId: new Types.ObjectId(organizationId),
-      })
-      .sort({ creationDate: -1 })
-      .lean()
 
-    if (!invitations.length) {
-      return []
+    const skip = (page - 1) * limit
+
+    const filter = {
+      organizationId: new Types.ObjectId(
+        organizationId,
+      ),
     }
 
-    // Organización
-    const organization = await this.organizationModel
-      .findById(organizationId, { name: 1 })
-      .lean()
+    const [
+      invitations,
+      totalItems,
+      organization,
+    ] = await Promise.all([
+      this.invitationModel
+        .find(filter)
+        .sort({ creationDate: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
 
-    // Usuarios que enviaron invitaciones
+      this.invitationModel.countDocuments(
+        filter,
+      ),
+
+      this.organizationModel
+        .findById(
+          organizationId,
+          { name: 1 },
+        )
+        .lean(),
+    ])
+
+    if (!invitations.length) {
+      return {
+        list: [],
+
+        page,
+        limit,
+
+        totalItems,
+
+        totalPages: Math.ceil(
+          totalItems / limit,
+        ),
+      }
+    }
+
     const userIds = [
       ...new Set(
-        invitations.map(inv => inv.sentByUserId.toString()),
+        invitations.map(inv =>
+          inv.sentByUserId.toString(),
+        ),
       ),
     ]
 
-    const users = await this.userModel.find(
-      {
-        _id: { $in: userIds },
-      },
-      {
-        name: 1,
-      },
-    ).lean();
+    const users = await this.userModel
+      .find(
+        {
+          _id: { $in: userIds },
+        },
+        {
+          name: 1,
+        },
+      )
+      .lean()
 
     const userMap = new Map(
       users.map(user => [
@@ -512,33 +549,62 @@ export class InvitationService {
       ]),
     )
 
-    return invitations.map(inv => {
+    const list = invitations.map(inv => {
 
       const expired =
-        Date.now() - new Date(inv.creationDate).getTime() >=
-        inv.duration * 60 * 60 * 1000;
+        Date.now() -
+          new Date(
+            inv.creationDate,
+          ).getTime() >=
+        inv.duration *
+          60 *
+          60 *
+          1000
 
       return {
         _id: inv._id.toString(),
 
-        organizationId: inv.organizationId.toString(),
+        organizationId:
+          inv.organizationId.toString(),
+
         organizationName:
-          organization?.name ?? 'Unknown organization',
+          organization?.name ??
+          'Unknown organization',
 
         userEmail: inv.userEmail,
 
-        sentByUserId: inv.sentByUserId.toString(),
-        sentByUserName:
-          userMap.get(inv.sentByUserId.toString()) ??
-          'Unknown user',
+        sentByUserId:
+          inv.sentByUserId.toString(),
 
-        creationDate: inv.creationDate,
+        sentByUserName:
+          userMap.get(
+            inv.sentByUserId.toString(),
+          ) ?? 'Unknown user',
+
+        creationDate:
+          inv.creationDate,
+
         duration: inv.duration,
-        userOrganizationRole: inv.userOrganizationRole,
+
+        userOrganizationRole:
+          inv.userOrganizationRole,
 
         expired,
       }
     })
+
+    return {
+      list,
+
+      page,
+      limit,
+
+      totalItems,
+
+      totalPages: Math.ceil(
+        totalItems / limit,
+      ),
+    }
   }
 
 }

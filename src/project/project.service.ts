@@ -14,6 +14,7 @@ import { OrganizationService } from 'src/organization/organization.service';
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActionType } from 'src/activity-logs/common/types';
+import { BlueprintService } from 'src/blueprint/blueprint.service';
 
 @Injectable()
 export class ProjectService {
@@ -27,6 +28,7 @@ export class ProjectService {
     @InjectModel(Organization.name) private organizationModel: Model<OrganizationDocument>,
     private readonly organizationService: OrganizationService,
     private readonly activityLogsService: ActivityLogsService,
+    private readonly blueprintService: BlueprintService,
   ) {}
 
 
@@ -264,11 +266,74 @@ export class ProjectService {
 
 
   // ALL PROJECTS BY organizationId
-  async getAllProjectsByOrganizationId(organizationId: string): Promise<ProjectDocument[]> {
-    return this.projectModel
-      .find({
-        organizationId: new Types.ObjectId(organizationId)
-      })
+  async getAllProjectsByOrganizationId(
+    organizationId: string,
+    page: number,
+    limit: number,
+    userId: string,
+    userGlobalRole: string,
+  ) {
+
+    const skip = (page - 1) * limit;
+
+    const filter = {
+      organizationId: new Types.ObjectId(
+        organizationId,
+      ),
+    };
+
+    const [projects, totalItems] =
+      await Promise.all([
+        this.projectModel
+          .find(filter)
+          .sort({
+            projectName: 1,
+          })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+
+        this.projectModel.countDocuments(
+          filter,
+        ),
+      ]);
+
+    const projectsWithThumbnail =
+      await Promise.all(
+        projects.map(async (project) => {
+
+          let oldestBlueprintThumbnailUrl = '';
+
+          try {
+              const result = await this.blueprintService.getOldestBlueprintThumbnailUrl(
+                project._id.toString(),
+                userId,
+                userGlobalRole,
+              );
+              oldestBlueprintThumbnailUrl = result.downloadUrl
+          } catch {
+            oldestBlueprintThumbnailUrl = '';
+          }
+
+          return {
+            ...project,
+            oldestBlueprintThumbnailUrl,
+          };
+        }),
+      );
+
+    return {
+      list: projectsWithThumbnail,
+
+      page,
+      limit,
+
+      totalItems,
+
+      totalPages: Math.ceil(
+        totalItems / limit,
+      ),
+    };
   }
 
 
