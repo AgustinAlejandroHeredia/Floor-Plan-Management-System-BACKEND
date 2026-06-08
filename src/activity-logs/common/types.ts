@@ -34,5 +34,7 @@ export enum ActionType {
 
     ENQUEUE_INFERENCE_JOB = "ask for inference job",
     CANCEL_INFERENCE_JOB = "cancel pending inference job",
+
+    TEST_ACTION = "testing action log",
     
 }

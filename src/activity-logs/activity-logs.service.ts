@@ -39,4 +39,8 @@ export class ActivityLogsService {
       })
       .exec();
   }
+
+  async deleteActivityLog(activityId: string) {
+    return this.activityLogModel.findByIdAndDelete(new Types.ObjectId(activityId))
+  }
 }
