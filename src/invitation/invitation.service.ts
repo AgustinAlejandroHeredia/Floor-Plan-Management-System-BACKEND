@@ -158,6 +158,12 @@ export class InvitationService {
             </p>
 
             <p>
+              <strong>Important:</strong> This invitation token will expire
+              24 hours after this email is received. Once expired, the token
+              can no longer be used and a new invitation must be requested.
+            </p>
+
+            <p>
               Once the token has been successfully validated, you will automatically be granted access to the organization and its associated resources according to the permissions assigned to your invitation.
             </p>
 
