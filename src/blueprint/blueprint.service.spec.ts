@@ -12,6 +12,7 @@ import { UserRole } from 'src/user/common/role.enum';
 import { Project } from 'src/project/schemas/project.schema';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { rejects } from 'assert';
+import { Types } from 'mongoose';
 
 describe('BlueprintService', () => {
 
@@ -44,13 +45,18 @@ describe('BlueprintService', () => {
         })
       )
 
+    mockBlueprintModel.findById = jest.fn()
+    mockBlueprintModel.findByIdAndDelete = jest.fn()
+
     mockOrganizationMembershipService = {
-      findByUserIdAndOrganizationId: jest.fn()
+      findByUserIdAndOrganizationId: jest.fn(),
+      validateOrganizationAccess: jest.fn(),
     }
 
     mockStorageService = {
       uploadFile: jest.fn(),
       deleteFile: jest.fn(),
+      getSignedDownloadUrl: jest.fn(),
     }
 
     mockThumbnailService = {
@@ -63,6 +69,10 @@ describe('BlueprintService', () => {
     }
 
     mockOrganizationModel = {
+      findById: jest.fn()
+    }
+
+    mockProjectModel = {
       findById: jest.fn()
     }
 
@@ -818,7 +828,327 @@ describe('BlueprintService', () => {
 
     describe('findOne', () => {
 
-      
+      it('finds one blueprint successfully', async () => {
+
+        const blueprintId = '69c30bd8d16ceac57816ee7z'
+        const orgId = '69c30bd8d16ceac57816ee7a'
+
+        // blueprint FOUND
+        mockBlueprintModel.findById.mockReturnValue({
+          lean: jest.fn().mockResolvedValue({
+            _id: blueprintId,
+            blueprintName: 'Test blueprint',
+            filename: 'file.png',
+            projectId: new Types.ObjectId(),
+            organizationId: new Types.ObjectId(orgId),
+            originalBlueprintId: null,
+          }),
+        })
+
+        // membership
+        mockOrganizationMembershipService
+          .findByUserIdAndOrganizationId
+          .mockResolvedValue(true)
+
+        // download url
+        mockStorageService
+          .getSignedDownloadUrl
+          .mockResolvedValue('downloadUrl')
+
+        // project
+        mockProjectModel
+          .findById
+          .mockResolvedValue({
+            levels: 8,
+            basement: true,
+          })
+
+        const result = await service.findOne(
+          blueprintId,
+          test_user_id_string,
+          UserRole.NONE,
+        )
+
+        // assertions
+        expect(mockBlueprintModel.findById).toHaveBeenCalledWith(
+          blueprintId,
+          { titleBlock: 0 },
+        )
+
+        expect(
+          mockOrganizationMembershipService.findByUserIdAndOrganizationId,
+        ).toHaveBeenCalledWith(
+          test_user_id_string,
+          orgId,
+        )
+
+        expect(
+          mockStorageService.getSignedDownloadUrl,
+        ).toHaveBeenCalledWith('file.png')
+
+        expect(mockProjectModel.findById).toHaveBeenCalled()
+
+        expect(result).toHaveProperty('downloadUrl', 'downloadUrl')
+      })
+
+      it(
+        'fails because cant find the blueprint',
+        async () => {
+
+          const blueprintId = '69c30bd8d16ceac57816ee7z'
+
+          // blueprint FOUND
+          mockBlueprintModel.findById.mockReturnValue({
+            lean: jest.fn().mockResolvedValue(null)
+          })
+
+          await expect (
+            service.findOne(
+              blueprintId,
+              test_user_id_string,
+              UserRole.NONE,
+            )
+          ).rejects.toThrow(NotFoundException)
+
+          expect(mockBlueprintModel.findById).toHaveBeenCalled()
+        }
+      )
+
+      it(
+        'fails because user does not belong to the organization',
+        async () => {
+
+          const blueprintId = '69c30bd8d16ceac57816ee7z'
+          const orgId = '69c30bd8d16ceac57816ee7a'
+
+          // blueprint FOUND
+          mockBlueprintModel.findById.mockReturnValue({
+            lean: jest.fn().mockResolvedValue({
+              _id: blueprintId,
+              blueprintName: 'Test blueprint',
+              filename: 'file.png',
+              projectId: new Types.ObjectId(),
+              organizationId: new Types.ObjectId(orgId),
+              originalBlueprintId: null,
+            }),
+          })
+
+          // membership
+          mockOrganizationMembershipService
+            .findByUserIdAndOrganizationId
+            .mockResolvedValue(false)
+
+          await expect (
+              service.findOne(
+                blueprintId,
+                test_user_id_string,
+                UserRole.NONE,
+              )
+            ).rejects.toThrow(ForbiddenException)
+
+          expect(mockBlueprintModel.findById).toHaveBeenCalled()
+
+          expect(
+            mockOrganizationMembershipService.findByUserIdAndOrganizationId,
+          ).toHaveBeenCalledTimes(1)
+        }
+      )
+
+      it(
+        'successfully gets blueprint with superadmin role without being member',
+        async () => {
+
+          const blueprintId = '69c30bd8d16ceac57816ee7z'
+          const orgId = '69c30bd8d16ceac57816ee7a'
+
+          // blueprint FOUND
+          mockBlueprintModel.findById.mockReturnValue({
+            lean: jest.fn().mockResolvedValue({
+              _id: blueprintId,
+              blueprintName: 'Test blueprint',
+              filename: 'file.png',
+              projectId: new Types.ObjectId(),
+              organizationId: new Types.ObjectId(orgId),
+              originalBlueprintId: null,
+            }),
+          })
+
+          // membership
+          mockOrganizationMembershipService
+            .findByUserIdAndOrganizationId
+            .mockResolvedValue(false)
+
+          // download url
+          mockStorageService
+            .getSignedDownloadUrl
+            .mockResolvedValue('downloadUrl')
+
+          // project
+          mockProjectModel
+            .findById
+            .mockResolvedValue({
+              levels: 8,
+              basement: true,
+            })
+
+          const result = await service.findOne(
+            blueprintId,
+            test_user_id_string,
+            UserRole.SUPERADMIN,
+          )
+
+          // assertions
+          expect(mockBlueprintModel.findById).toHaveBeenCalledWith(
+            blueprintId,
+            { titleBlock: 0 },
+          )
+
+          expect(
+            mockOrganizationMembershipService.findByUserIdAndOrganizationId,
+          ).toHaveBeenCalledWith(
+            test_user_id_string,
+            orgId,
+          )
+
+          expect(
+            mockStorageService.getSignedDownloadUrl,
+          ).toHaveBeenCalledWith('file.png')
+
+          expect(mockProjectModel.findById).toHaveBeenCalled()
+
+          expect(result).toHaveProperty('downloadUrl', 'downloadUrl')
+
+        }
+      )
+
+    })
+    
+    describe('remove', () => {
+
+      it(
+        'successfully deletes blueprint and files',
+        async () => {
+
+          const blueprintId = '69c30bd8d16ceac57816ee7z'
+
+          const orgId = '69c30bd8d16ceac57816ee7a'
+
+          // blueprint FOUND
+          mockBlueprintModel.findById.mockReturnValue({
+            lean: jest.fn().mockResolvedValue({
+              _id: blueprintId,
+              blueprintName: 'Test blueprint',
+              filename: 'file.png',
+              storageId: 'storage-id-123',
+              storageThumbnailId: 'thumbnail-id-123',
+              projectId: new Types.ObjectId(),
+              organizationId: new Types.ObjectId(orgId),
+              originalBlueprintId: null,
+            }),
+          })
+
+          // belongs to organization
+          mockOrganizationMembershipService
+            .validateOrganizationAccess
+            .mockResolvedValue(undefined)
+
+          // not a crop, so no update
+
+          // delete mongo doc
+          mockBlueprintModel
+            .findByIdAndDelete
+            .mockResolvedValue(undefined)
+
+          // delete files
+          mockStorageService
+            .deleteFile
+            .mockResolvedValue(undefined)
+
+          // activity log
+          mockActivityLogService
+            .create
+            .mockResolvedValue(undefined)
+
+          const result = await service.remove(
+            blueprintId,
+            test_user_id_string,
+            UserRole.NONE
+          )
+
+          // result
+          expect(
+            result
+          ).toMatchObject({
+            message: 'Blueprint eliminado correctamente',
+          })
+
+          expect(mockStorageService.deleteFile).toHaveBeenCalledTimes(2)
+          expect(mockBlueprintModel.findByIdAndDelete).toHaveBeenCalledWith(blueprintId)
+        }
+      )
+
+      it(
+        'fails because cant find the blueprint', 
+        async () => {
+
+          const blueprintId = '69c30bd8d16ceac57816ee7z'
+
+          // blueprint NOT FOUND
+          mockBlueprintModel.findById.mockReturnValue({
+            lean: jest.fn().mockResolvedValue(undefined),
+          })
+
+          await expect (
+              service.remove(
+                blueprintId,
+                test_user_id_string,
+                UserRole.NONE,
+              )
+            ).rejects.toThrow(NotFoundException)
+
+          expect(mockBlueprintModel.findById).toHaveBeenCalledTimes(1)
+        }
+      )
+
+      it(
+        'fails because of invalid access',
+        async () => {
+
+          const blueprintId = '69c30bd8d16ceac57816ee7z'
+
+          const orgId = '69c30bd8d16ceac57816ee7a'
+
+          // blueprint FOUND
+          mockBlueprintModel.findById.mockReturnValue({
+            lean: jest.fn().mockResolvedValue({
+              _id: blueprintId,
+              blueprintName: 'Test blueprint',
+              filename: 'file.png',
+              storageId: 'storage-id-123',
+              storageThumbnailId: 'thumbnail-id-123',
+              projectId: new Types.ObjectId(),
+              organizationId: new Types.ObjectId(orgId),
+              originalBlueprintId: null,
+            }),
+          })
+
+          // belongs to organization
+          mockOrganizationMembershipService
+            .validateOrganizationAccess
+            .mockRejectedValue(new ForbiddenException("Access denied, user does not belog to the organization"))
+
+          await expect (
+              service.remove(
+                blueprintId,
+                test_user_id_string,
+                UserRole.NONE,
+              )
+            ).rejects.toThrow(ForbiddenException)
+
+          expect(mockBlueprintModel.findByIdAndDelete).not.toHaveBeenCalled()
+          expect(mockStorageService.deleteFile).not.toHaveBeenCalled()
+        }
+      )
 
     })
 
