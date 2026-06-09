@@ -49,15 +49,15 @@ export class BlueprintService {
       throw new BadRequestException('File required');
     }
 
+    const organization = await this.organizationModel.findById(new Types.ObjectId(dto.organizationId))
+    if(!organization){
+      throw new NotFoundException("Organization not found")
+    }
+
     // user exists in the organization?
     const belongs = await this.organizationMembershipService.findByUserIdAndOrganizationId(userId, dto.organizationId)
     if(!belongs && userGlobalRole !== UserRole.SUPERADMIN){
       throw new ForbiddenException("Access denied, user does not belog to the organization")
-    }
-
-    const organization = await this.organizationModel.findById(new Types.ObjectId(dto.organizationId))
-    if(!organization){
-      throw new NotFoundException("Organization not found")
     }
     
     const organizationBlueprintsCount = await this.getBlueprintCountByOrganizationId(dto.organizationId, userId, userGlobalRole)
