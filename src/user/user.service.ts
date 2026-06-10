@@ -113,6 +113,21 @@ export class UserService {
   }
 
   // ======================
+  // FIND ONE BY EMAIL
+  // ======================
+  async findOneByEmail(email: string): Promise<UserDocument> {
+    const user = await this.userModel.findOne({
+      email: email.trim().toLocaleLowerCase()
+    })
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  // ======================
   // UPDATE
   // ======================
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {

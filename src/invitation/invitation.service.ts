@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
-import { OrganizationRole } from 'src/user/common/role.enum';
+import { OrganizationRole, UserRole } from 'src/user/common/role.enum';
 import { InjectModel } from '@nestjs/mongoose';
 import { Invitation, InvitationDocument } from './schemas/invitation.schema';
 import { Model, Types } from 'mongoose';
@@ -38,7 +38,8 @@ export class InvitationService {
   }
 
   async create(
-    invitedBy: string,
+    invitedById: string,
+    invitedByEmail: string,
     createInvitationDto: CreateInvitationDto,
     userGlobalRole: string,
   ) {
@@ -47,14 +48,16 @@ export class InvitationService {
     try {
 
       await this.organizationMembershipService.validateOrganizationAccess(
-        invitedBy,
+        invitedById,
         createInvitationDto.organizationId,
         userGlobalRole,
       )
 
+      const isSuperAdmin = userGlobalRole === UserRole.SUPERADMIN
+
       const [senderMembership, org] = await Promise.all([
         this.organizationMembershipService.findByUserIdAndOrganizationId(
-          invitedBy,
+          invitedById,
           createInvitationDto.organizationId,
         ),
         this.organizationService.findOne(
@@ -62,9 +65,30 @@ export class InvitationService {
         ),
       ])
 
-      if (!senderMembership) {
+      if(invitedByEmail.trim().toLocaleLowerCase() === createInvitationDto.userEmail.trim().toLocaleLowerCase()){
+        throw new BadRequestException(
+          'You cannot ivite yourself'
+        )
+      }
+
+      // new condition
+      const invitedUserData = await this.userService.findOneByEmail(createInvitationDto.userEmail)
+
+      // new condition
+      const invitedUserMembership = await this.organizationMembershipService.findByUserIdAndOrganizationId(
+        invitedUserData._id.toString(),
+        createInvitationDto.userEmail,
+      )
+
+      if(invitedUserMembership){
         throw new ConflictException(
-          'User doesnt belong to this organization',
+          'User alredy belongs to the organization',
+        )
+      }
+
+      if (!senderMembership && !isSuperAdmin) {
+        throw new ConflictException(
+          'Sender user doesnt belong to this organization',
         )
       }
 
@@ -75,10 +99,9 @@ export class InvitationService {
       }
 
       if (
-        org.invitePermission ===
-          OrganizationActionPermission.ADMINS &&
-        senderMembership.organizationRole !==
-          OrganizationRole.ADMIN
+        !isSuperAdmin &&
+        org.invitePermission === OrganizationActionPermission.ADMINS &&
+        senderMembership.organizationRole !== OrganizationRole.ADMIN
       ) {
         throw new ForbiddenException(
           'No permissions for this action',
@@ -121,7 +144,7 @@ export class InvitationService {
           ),
           userEmail: normalizedEmail,
           sentByUserId: new Types.ObjectId(
-            invitedBy,
+            invitedById,
           ),
           duration:
             createInvitationDto.duration ?? 24,
@@ -195,7 +218,7 @@ export class InvitationService {
       }
 
       await this.activityLogsService.create(
-        invitedBy,
+        invitedById,
         {
           action: ActionType.SEND_INVITATION,
           description:
@@ -249,8 +272,10 @@ export class InvitationService {
     const invitedUserData = await this.userService.findOne(userId)
     
     if(
-      invitation.userEmail.trim().toLowerCase() !==
-      invitedUserData.email.trim().toLowerCase()
+      invitedUserData && (
+        invitation.userEmail.trim().toLowerCase() !==
+        invitedUserData.email.trim().toLowerCase()
+      )
     ){
       console.log("Email asking for invitation: ", invitedUserData.email, ", and email on invitation: ", invitation.userEmail)
       throw new BadRequestException(
@@ -285,7 +310,7 @@ export class InvitationService {
 
       throw new InternalServerErrorException(
         'Something went wrong adding user to organization.',
-      );
+      )
     }
   }
 
@@ -302,6 +327,26 @@ export class InvitationService {
 
     // user belongs to this organization?
     await this.organizationMembershipService.validateOrganizationAccess(userId, invitation.organizationId.toString(), userGlobalRole)
+
+    const userMembership =
+      await this.organizationMembershipService
+        .findByUserIdAndOrganizationId(
+          userId,
+          invitation.organizationId.toString(),
+        )
+
+    const isSuperAdmin =
+      userGlobalRole === UserRole.SUPERADMIN
+
+    const isOrgAdmin =
+      userMembership?.organizationRole ===
+      OrganizationRole.ADMIN
+
+    if (!isSuperAdmin && !isOrgAdmin) {
+      throw new ForbiddenException(
+        'access denied',
+      )
+    }
 
     // ACTIVITY LOG
     this.activityLogsService.create(userId, {

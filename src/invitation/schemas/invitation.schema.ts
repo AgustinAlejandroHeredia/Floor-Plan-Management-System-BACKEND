@@ -22,7 +22,7 @@ export class Invitation {
     @Prop({ required: true, type: Number , default: 24 }) // hours
     duration: number
 
-    @Prop({ 
+    @Prop({
         required: true,
         type: String,
         enum: OrganizationRole,

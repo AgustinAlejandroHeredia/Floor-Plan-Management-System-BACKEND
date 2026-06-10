@@ -25,7 +25,12 @@ export class InvitationController {
     @Req() req,
     @Body() createInvitationDto: CreateInvitationDto,
   ) {
-    return this.invitationService.create(req.user.internalId, createInvitationDto, req.user.globalRole);
+    return this.invitationService.create(
+      req.user.internalId,
+      req.user.email, 
+      createInvitationDto, 
+      req.user.globalRole
+    );
   }
 
   @UseGuards(JwtAuthGuard)
