@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { BlueprintService } from './blueprint.service';
 import { getModelToken } from '@nestjs/mongoose';
 import { Blueprint } from './schemas/blueprint.schema';
@@ -11,7 +11,6 @@ import { CreateBlueprintDto } from './dto/create-blueprint.dto';
 import { UserRole } from 'src/user/common/role.enum';
 import { Project } from 'src/project/schemas/project.schema';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { rejects } from 'assert';
 import { Types } from 'mongoose';
 
 describe('BlueprintService', () => {
