@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException, ForbiddenException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
@@ -12,13 +12,11 @@ import { Organization, OrganizationDocument } from './schemas/organization.schem
 // RELATIONS
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 import { OrganizationMembership } from 'src/organization_membership/schemas/organization_membership.schema';
-import { OrganizationRole, UserRole } from 'src/user/common/role.enum';
-import { ProjectMembershipService } from 'src/project_membership/project_membership.service';
+import { OrganizationRole } from 'src/user/common/role.enum';
 import { OrganizationActionPermission } from 'src/organization/common/orgPermission.enum';
 import { OrganizationWithRoles } from './common/types';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActionType } from 'src/activity-logs/common/types';
-import { User, UserDocument } from 'src/user/schemas/user.schema';
 
 @Injectable()
 export class OrganizationService {
@@ -26,10 +24,7 @@ export class OrganizationService {
   constructor(
     @InjectModel(Organization.name)
     private readonly organizationModel: Model<OrganizationDocument>,
-    @InjectModel(User.name)
-    private readonly userModel: Model<UserDocument>,
     private readonly organizationMembershipService: OrganizationMembershipService,
-    private readonly projectMembershipService: ProjectMembershipService,
     private readonly activityLogsService: ActivityLogsService,
   ) {}
 
@@ -45,17 +40,21 @@ export class OrganizationService {
 
       // Crear automáticamente el OrganizationMembership del creador
       try {
+
         await this.organizationMembershipService.create({
           userId: createDto.adminId,
           organizationId: savedOrganization._id.toString(),
           organizationRole: OrganizationRole.ADMIN, // rol de administrador
-        });
+        })
+
       } catch (membershipError) {
+
         await this.organizationModel.findByIdAndDelete(savedOrganization._id)
         console.log('ERROR creando OrganizationMembership:', membershipError);
         throw new InternalServerErrorException(
-          'Error creating organization membership for the creator',
-        );
+          'Error creating organization membership for the creator. Organization not created.',
+        )
+
       }
 
       // ACTIVITY LOG
@@ -64,6 +63,8 @@ export class OrganizationService {
         description: `Organization created with the name "${savedOrganization.name}".`,
         targetName: `${savedOrganization.name}`,
         targetId: `${savedOrganization.id}`
+      }).catch(logError => {
+        console.log("Error creating log for organization creation: ", logError)
       })
 
       return savedOrganization;
@@ -253,67 +254,59 @@ export class OrganizationService {
     updateDto: UpdateOrganizationDto,
     userId: string,
   ): Promise<OrganizationDocument> {
-    const { name, contactEmail, contactPhone } = updateDto;
+    const { name, contactEmail, contactPhone } = updateDto
 
-    // Verificar nombre único
-    if (name) {
-      const exists = await this.organizationModel.findOne({ 
-        name, 
-        _id: { $ne: id }  // Excluye la organización actual
-      });
-      if (exists) {
-        throw new BadRequestException('Organization name already exists');
+    const conditions: any[] = []
+    if (name) conditions.push({ name })
+    if (contactEmail) conditions.push({ contactEmail })
+    if (contactPhone) conditions.push({ contactPhone })
+
+    if (conditions.length > 0) {
+      const conflictingOrg = await this.organizationModel.findOne({
+        _id: { $ne: id },
+        $or: conditions,
+      })
+
+      if (conflictingOrg) {
+        if (name && conflictingOrg.name === name) {
+          throw new BadRequestException('Organization name already exists')
+        }
+        if (contactEmail && conflictingOrg.contactEmail === contactEmail) {
+          throw new BadRequestException('Organization email already exists')
+        }
+        if (contactPhone && conflictingOrg.contactPhone === contactPhone) {
+          throw new BadRequestException('Organization phone already exists')
+        }
       }
     }
 
-    // Verificar email único
-    if (contactEmail) {
-      const exists = await this.organizationModel.findOne({ 
-        contactEmail, 
-        _id: { $ne: id } 
-      });
-      if (exists) {
-        throw new BadRequestException('Organization email already exists');
-      }
-    }
-
-    // Verificar teléfono único
-    if (contactPhone) {
-      const exists = await this.organizationModel.findOne({ 
-        contactPhone, 
-        _id: { $ne: id } 
-      });
-      if (exists) {
-        throw new BadRequestException('Organization phone already exists');
-      }
-    }
-
-    // Actualizar con validadores de Mongoose
     try {
       const updated = await this.organizationModel.findByIdAndUpdate(
-        new Types.ObjectId(id),
+        id,
         updateDto,
-        { new: true, runValidators: true }, // runValidators asegura que se respeten los decorators de DTO
-      );
+        { new: true, runValidators: true },
+      )
 
       if (!updated) {
         throw new NotFoundException('Organization not found');
       }
 
-      // ACTIVITY LOG
+      // ACTIVITY LOG (Fire-and-forget seguro)
       this.activityLogsService.create(userId, {
         action: ActionType.EDIT_ORGANIZATION,
         description: `Organization edited with the name "${updated.name}".`,
         targetName: `${updated.name}`,
         targetId: `${updated.id}`
+      }).catch(logError => {
+        console.log("Error creating log for organization update: ", logError)
       })
 
       return updated;
     } catch (error: any) {
       if (error.code === 11000) {
-        throw new BadRequestException('Duplicate value for a unique field');
+        throw new BadRequestException('Duplicate value for a unique field')
       }
-      throw error;
+      throw error
     }
   }
 
@@ -341,6 +334,8 @@ export class OrganizationService {
         description: `Organization edited with the name "${updated.name}". Create permissions "${current?.createPermission}" -> "${updated.createPermission}. Invite permission "${current?.invitePermission}" -> "${updated.invitePermission}".`,
         targetName: `${updated.name}`,
         targetId: `${updated.id}`
+      }).catch(logError => {
+        console.log("Error creating log for organization updateOrganizationActionPermissions: ", logError)
       })
 
       return 
@@ -414,7 +409,10 @@ export class OrganizationService {
   ): Promise<OrganizationMembership> {
 
     // ORG EXISTS?
-    const organization = await this.findOne(organizationId);
+    const organization = await this.organizationModel.findById(new Types.ObjectId(organizationId));
+    if(!organization){
+      throw new NotFoundException()
+    }
 
     // DEFAULT : MEMBER
     let role = OrganizationRole.MEMBER
@@ -422,11 +420,19 @@ export class OrganizationService {
       role = organizationRole
     }
 
+    const existingMembership = await this.organizationMembershipService.findByUserIdAndOrganizationId(userId, organizationId)
+    if(existingMembership){
+      throw new ConflictException()
+    }
+    
     const orgMembership = await this.organizationMembershipService.create({
       userId,
       organizationId,
       organizationRole: role,
-    });
+    }).catch(createMembershipError => {
+      console.log("Error creating organization membership: ", createMembershipError)
+      throw new InternalServerErrorException()
+    })
 
     // ACTIVITY LOG
     this.activityLogsService.create(adminUserId, {
@@ -434,6 +440,8 @@ export class OrganizationService {
       description: `Added user to the orgnaization "${organization.name}".`,
       targetName: "new membership",
       targetId: `${orgMembership._id}`
+    }).catch(logError => {
+      console.log("Error creating log for organization addUserToOrganization: ", logError)
     })
 
     return orgMembership
@@ -478,6 +486,8 @@ export class OrganizationService {
         description: `User was kicked from the organization "${organization.name}".`,
         targetName: "kicked user",
         targetId: "deleted membershio"
+      }).catch(logError => {
+        console.log("Error creating log for organization removeUserFromOrganization - kick user: ", logError)
       })
     } else {
       // USER LEFT
@@ -486,6 +496,8 @@ export class OrganizationService {
         description: `The user left the organization "${organization.name}".`,
         targetName: "user left",
         targetId: "deleted membership"
+      }).catch(logError => {
+        console.log("Error creating log for organization removeUserFromOrganization - leave organization: ", logError)
       })
     }
   }

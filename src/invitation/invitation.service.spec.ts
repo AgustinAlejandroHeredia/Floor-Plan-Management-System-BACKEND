@@ -25,8 +25,6 @@ describe('InvitationService', () => {
 
   let service: InvitationService;
 
-  let saveMock: jest.Mock
-
   // MODELS
   let mockInvitationModel: any
   let mockUserModel: any

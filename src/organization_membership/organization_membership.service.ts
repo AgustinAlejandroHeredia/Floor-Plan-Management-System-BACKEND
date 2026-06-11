@@ -94,7 +94,7 @@ export class OrganizationMembershipService {
     const result = await this.membershipModel.findOneAndDelete({
       userId: new Types.ObjectId(userId),
       organizationId: new Types.ObjectId(organizationId),
-    });
+    })
 
     if (!result) {
       throw new NotFoundException('Membership not found');
