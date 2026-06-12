@@ -75,10 +75,16 @@ export class InvitationService {
       const invitedUserData = await this.userService.findOneByEmail(createInvitationDto.userEmail)
 
       // new condition
-      const invitedUserMembership = await this.organizationMembershipService.findByUserIdAndOrganizationId(
-        invitedUserData._id.toString(),
-        createInvitationDto.userEmail,
-      )
+      let invitedUserMembership
+      try {
+        const membership = await this.organizationMembershipService.findByUserIdAndOrganizationId(
+          invitedUserData._id.toString(),
+          createInvitationDto.organizationId,
+        )
+        invitedUserMembership = membership
+      } catch (error) {
+        invitedUserMembership = null
+      }
 
       if(invitedUserMembership){
         throw new ConflictException(
@@ -260,6 +266,8 @@ export class InvitationService {
     userId: string,
     code: string,
   ) {
+
+    console.log("Llega aca")
 
     const invitation = await this.getInvitationByCode(code)
     if(!invitation){

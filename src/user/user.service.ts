@@ -102,14 +102,20 @@ export class UserService {
   // ======================
   // FIND ONE
   // ======================
-  async findOne(id: string): Promise<User> {
-    const user = await this.userModel.findById(new Types.ObjectId(id));
+  async findOne(id: string, self?: boolean): Promise<User & { self: boolean }> {
+    const user = await this.userModel
+      .findById(new Types.ObjectId(id))
+      .select('-authProviderId')
+      .lean()
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('User not found')
     }
 
-    return user;
+    return {
+      ...user,
+      self: self ?? false,
+    }
   }
 
   // ======================

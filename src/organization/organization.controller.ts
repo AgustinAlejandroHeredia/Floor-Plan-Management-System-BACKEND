@@ -75,13 +75,16 @@ export class OrganizationController {
     return this.organizationService.findAll();
   }
 
-  // GET ALL ORGANIZATION MEMBERS AS ORGANIZATION ADMIN
-  @Get('/allMembers/admin/:organizationId')
+  // GET ALL ORGANIZATION MEMBERS AS ORGANIZATION MEMBER
+  @Get('/allMembers/member/:organizationId')
   @UseGuards(JwtAuthGuard, AccessGuard)
-  @OrganizationRoles(OrganizationRole.ADMIN)
+  @OrganizationRoles(
+    OrganizationRole.ADMIN,
+    OrganizationRole.MEMBER,
+  )
   @ApiOperation({
     summary:
-      'Get paginated members for the organization - organization admin users only',
+      'Get paginated members for the organization - organization members only',
   })
   @ApiParam({
     name: 'organizationId',
@@ -102,7 +105,7 @@ export class OrganizationController {
     @Query('limit')
     limit: number,
   ) {
-    return this.organizationService.getOrganizationMemberListAsAdmin(
+    return this.organizationService.getOrganizationMemberListAsMember(
       organizationId,
       Number(page),
       Number(limit),
@@ -236,6 +239,19 @@ export class OrganizationController {
     @Req() req,
   ){
     return this.organizationService.getMyOrganizationsAndRoles(req.user.internalId)
+  }
+
+  // GET MY ORGANIZATIONS IN COMMON WITH THIS USER ID
+  @Get('organizationsInCommon/:userId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get organizations in common with this user id' })
+  @ApiParam({ name: 'organizationId', type: String })
+  @ApiResponse({ status: 200, description: 'Organizations obtained successfully' })
+  getOrganizationsInCommon(
+    @Req() req,
+    @Param('userId') userId: string,
+  ){
+    return this.organizationService.getOrganizationsInCommon(req.user.internalId, userId)
   }
 
   // GET MY ORGANIZATION ROLE

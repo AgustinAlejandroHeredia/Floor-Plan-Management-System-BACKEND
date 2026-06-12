@@ -147,7 +147,7 @@ export class OrganizationService {
   }
 
   // GET ALL MEMBERS OF THE ORGANIZATION AS ADMIN
-  async getOrganizationMemberListAsAdmin(
+  async getOrganizationMemberListAsMember(
     organizationId: string,
     page: number,
     limit: number,
@@ -420,7 +420,15 @@ export class OrganizationService {
       role = organizationRole
     }
 
-    const existingMembership = await this.organizationMembershipService.findByUserIdAndOrganizationId(userId, organizationId)
+    let existingMembership
+    
+    try {
+      const membership = await this.organizationMembershipService.findByUserIdAndOrganizationId(userId, organizationId)
+      existingMembership = membership
+    } catch (error) {
+      existingMembership = null
+    }
+
     if(existingMembership){
       throw new ConflictException()
     }
@@ -554,6 +562,67 @@ export class OrganizationService {
     }
 
     return organizationRole;
+  }
+
+  // GET MY ORGANIZATIONS IN COMMON WITH THIS USER ID
+  async getOrganizationsInCommon(
+    requestUserId: string,
+    userId: string,
+  ): Promise<OrganizationWithRoles[]> {
+
+    const [requestUserMemberships, targetUserMemberships] =
+      await Promise.all([
+        this.organizationMembershipService.findByUserId(
+          requestUserId,
+        ),
+        this.organizationMembershipService.findByUserId(
+          userId,
+        ),
+      ])
+
+    const targetOrganizationIds = new Set(
+      targetUserMemberships.map(
+        (m) => m.organizationId.toString(),
+      ),
+    )
+
+    const commonMemberships =
+      requestUserMemberships.filter(
+        (m) =>
+          targetOrganizationIds.has(
+            m.organizationId.toString(),
+          ),
+      )
+
+    const commonOrganizationIds =
+      commonMemberships.map(
+        (m) => m.organizationId,
+      )
+
+    const organizations =
+      await this.organizationModel.find({
+        _id: { $in: commonOrganizationIds },
+      })
+
+    return commonMemberships
+      .map((membership) => {
+
+        const organization = organizations.find(
+          (org) =>
+            org._id.toString() ===
+            membership.organizationId.toString(),
+        )
+
+        if (!organization) {
+          return null
+        }
+
+        return {
+          organization,
+          role: membership.organizationRole,
+        }
+      })
+      .filter(Boolean) as OrganizationWithRoles[]
   }
 
 }

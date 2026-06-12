@@ -57,7 +57,7 @@ export class UserController {
   async getMyProfile(
     @Req() req,
   ){
-    return await this.userService.findOne(req.user.internalId)
+    return await this.userService.findOne(req.user.internalId, true)
   }
 
   @UseGuards(JwtAuthGuard)
@@ -99,7 +99,8 @@ export class UserController {
     @Query('userId') userId?: string,
   ){
     const targetUserId = userId ?? req.user.internalId
-    return await this.userService.findOne(targetUserId)
+    const self = req.user?.internalId === userId
+    return await this.userService.findOne(targetUserId, self)
   }
 
   @UseGuards(JwtAuthGuard)
