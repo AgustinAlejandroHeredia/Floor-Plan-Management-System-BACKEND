@@ -7,10 +7,18 @@ export type UserDocument = User & Document;
 @Schema()
 export class User {
 
-  @Prop({ required: true })
+  @Prop({ 
+    required: true, 
+    unique: true,
+  index: true,
+  })
   authProviderId: string;
 
-  @Prop({ required: true })
+  @Prop({ 
+    required: true,
+    unique: true,
+    index: true,
+  })
   email: string;
 
   @Prop({ required: true })

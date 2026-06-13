@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -49,16 +50,60 @@ export class UserService {
   // ======================
   // CREATE
   // ======================
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const user = new this.userModel(createUserDto);
-    // ACTIVITY LOG
-    this.activityLogsService.create(user.id, {
-      action: ActionType.UPLOAD_BLUEPRINT,
-      description: `New user ${user.name} joined platform.`,
-      targetName: `${user.email}`,
-      targetId: `${user.id}`
-    })
-    return user.save();
+  async create(
+    createUserDto: CreateUserDto,
+  ): Promise<User> {
+
+    const existingUser =
+      await this.userModel.findOne({
+        authProviderId:
+          createUserDto.authProviderId,
+      });
+
+    if (existingUser) {
+      return existingUser;
+    }
+
+    try {
+
+      const user =
+        await this.userModel.create(
+          createUserDto,
+        );
+
+      await this.activityLogsService.create(
+        user.id,
+        {
+          action: ActionType.USER_JOINS_PLATFORM,
+          description:
+            `New user ${user.name} joined the platform.`,
+          targetName:
+            user.email,
+          targetId:
+            user.id,
+        },
+      );
+
+      return user;
+
+    } catch (error: any) {
+
+      // race condition protection
+      if (error?.code === 11000) {
+
+        const existingUser =
+          await this.userModel.findOne({
+            authProviderId:
+              createUserDto.authProviderId,
+          });
+
+        if (existingUser) {
+          return existingUser;
+        }
+      }
+
+      throw error;
+    }
   }
 
   // ======================
