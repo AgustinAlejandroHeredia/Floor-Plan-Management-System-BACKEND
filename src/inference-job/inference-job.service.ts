@@ -33,6 +33,7 @@ import { UserRole } from 'src/user/common/role.enum';
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActionType } from 'src/activity-logs/common/types';
+import { UpdateSectionViewsDto } from 'src/blueprint/dto/update-section-views';
 
 interface QueueEntry {
   jobId: string;
@@ -409,14 +410,53 @@ export class InferenceJobService implements OnModuleInit {
       // SAVE FINAL RESULTS
       // =====================================================
 
-      await this.inferenceJobModel.findByIdAndUpdate(
+      const updatedJob = await this.inferenceJobModel.findByIdAndUpdate(
         jobId,
         {
           status:
             InferenceJobStatus.PROCESSED,
           result: results,
         },
+        {
+          new: true,
+        },
       );
+
+      if(!updatedJob){
+        throw new Error('update failed')
+      }
+
+      const dto: UpdateSectionViewsDto = {
+        sectionViews: updatedJob.result![0].predictions.map(prediction => ({
+          type: 'rectangle',
+
+          coordsList: [
+            {
+              x: prediction.bbox.x - prediction.bbox.width / 2,
+              y: prediction.bbox.y - prediction.bbox.height / 2,
+            },
+            {
+              x: prediction.bbox.x + prediction.bbox.width / 2,
+              y: prediction.bbox.y + prediction.bbox.height / 2,
+            },
+          ],
+
+          size: {
+            width: prediction.bbox.width,
+            height: prediction.bbox.height,
+          },
+
+          label: prediction.class,
+          confidence: prediction.confidence,
+        })),
+      }
+
+      await this.blueprintModel.findByIdAndUpdate(
+        new Types.ObjectId(updatedJob!.blueprintId),
+        {
+          sectionViews: dto.sectionViews,
+        },
+      )
 
     } catch (err: unknown) {
 
