@@ -21,6 +21,8 @@ import { AiProcessingModule } from './ai-processing/ai-processing.module';
 import { InferenceJobModule } from './inference-job/inference-job.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 import { EmailModule } from './email/email.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -35,6 +37,13 @@ import { EmailModule } from './email/email.module';
         uri: config.get<string>('MONGODB_URI'),
       }),
     }),
+
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // mil segs
+        limit: 100, // per ttl per ip (100 per 1 min) 
+      }
+    ]),
 
     JwtModule,
 
@@ -68,6 +77,12 @@ import { EmailModule } from './email/email.module';
 
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    AppService   
+  ],
 })
 export class AppModule {}
