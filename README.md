@@ -36,6 +36,14 @@ Copy `.env.example` to `.env` and fill in all values.
 
 ## Run
 
+Activate the Python env for running the inference script.
+
+
+```bash
+source  .venv/bin/activate
+
+```
+
 ```bash
 npm install
 npm run start:dev   # development (watch mode)
