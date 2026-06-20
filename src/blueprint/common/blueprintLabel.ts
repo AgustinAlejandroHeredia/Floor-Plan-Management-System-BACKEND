@@ -5,7 +5,7 @@ export enum SpecialtyTag {
   HOT_WATER = 'hot_water',
   ELECTRICAL = 'electrical',
   GAS = 'gas',
-  SEWAGE = 'sewage',
+  SEWERAGE = 'sewerage',
   RAINWATER = 'rainwater',
   NOTES = 'notes',
   TABLES = 'tables',
