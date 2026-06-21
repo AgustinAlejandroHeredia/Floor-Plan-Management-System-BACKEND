@@ -5,11 +5,10 @@ export enum ActionType {
     CHANGE_USER_GLOBAL_ROLE = "change user global role",
 
     SEND_INVITATION = "send invitation",
+    REFRESH_INVITATION = "refresh invitation",
     DELETE_INVIATION = "delete invitation",
 
     CHANGE_ACTION_PERMISSIONS = "change actions permissions",
-    CHANGE_USER_ORGANIZATION_ROLE = "change user organization role",
-    CHANGE_USER_PAGE_ROLE = "change user page role",
 
     CREATE_ORGANIZATION = "create organization",
     EDIT_ORGANIZATION = "edit organization",

@@ -72,7 +72,10 @@ export class ProjectService {
         action: ActionType.CREATE_PROJECT,
         description: `Project created with the name "${savedProject.projectName}".`,
         targetName: `${savedProject.projectName}`,
-        targetId: `${savedProject._id}`
+        targetId: `${savedProject._id}`,
+        fields: [
+          {key:'projectName', value:savedProject.projectName}
+        ]
       })
 
     } catch (error) {
@@ -155,7 +158,10 @@ export class ProjectService {
       action: ActionType.EDIT_PROJECT,
       description: `Project edited with the name "${updated.projectName}".`,
       targetName: `${updated.projectName}`,
-      targetId: `${updated._id}`
+      targetId: `${updated._id}`,
+      fields: [
+        {key:'projectName', value:updated.projectName}
+      ]
     })
 
     return updated

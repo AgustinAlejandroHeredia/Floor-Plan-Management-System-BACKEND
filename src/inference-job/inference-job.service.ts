@@ -135,7 +135,11 @@ export class InferenceJobService implements OnModuleInit {
       action: ActionType.ENQUEUE_INFERENCE_JOB,
       description: `Enqueued inference job for blueprint "${blueprint.blueprintName}" with wht next models: ${selectedModels.toString()}.`,
       targetName: "new inference job",
-      targetId: `${savedJob.id}`
+      targetId: `${savedJob.id}`,
+      fields: [
+        {key:'blueprintName', value:blueprint.blueprintName},
+        {key:'models', value:selectedModels.toString()}
+      ]
     })
 
     return savedJob;
@@ -223,8 +227,11 @@ export class InferenceJobService implements OnModuleInit {
     this.activityLogsService.create(userId, {
       action: ActionType.CANCEL_INFERENCE_JOB,
       description: `Canceled inference job for blueprint "${blueprint.blueprintName}".`,
-      targetName: "new inference job",
-      targetId: "jobId.id"
+      targetName: "cancel inference job",
+      targetId: "jobId.id",
+      fields: [
+        {key:'blueprintName', value:blueprint.blueprintName}
+      ]
     })
 
     // Edge case: job transitioned to a terminal state between the status read and here.

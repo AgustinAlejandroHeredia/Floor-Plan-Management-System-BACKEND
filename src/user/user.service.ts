@@ -81,6 +81,10 @@ export class UserService {
             user.email,
           targetId:
             user.id,
+          fields: [
+            {key:'userName', value:user.name},
+            {key:'userEmail', value:user.email}
+          ]
         },
       );
 
@@ -196,9 +200,15 @@ export class UserService {
     // ACTIVITY LOG
     this.activityLogsService.create(user.id, {
       action: ActionType.EDIT_USER,
-      description: `User ${user.name} edits self credentials. Name: "${updateUserDto.name}" -> "${user.name}". Email: "${updateUserDto.email}" -> "${user.email}"`,
+      description: `User ${user.name} edits self credentials. Name: "${user.name}" -> "${updateUserDto.name}". Email: "${user.email}" -> "${updateUserDto.email}"`,
       targetName: `${user.email}`,
-      targetId: `${user.id}`
+      targetId: `${user.id}`,
+      fields: [
+        {key:'oldUserName', value:user.name},
+        {key:'newUserName', value: updateUserDto.name || "newDefName"},
+        {key:'oldUserEmail', value:user.email},
+        {key:'newUserEmail', value:updateUserDto.email || "newDefEmail"},
+      ]
     })
 
     return user;
@@ -357,7 +367,13 @@ export class UserService {
       action: ActionType.CHANGE_USER_GLOBAL_ROLE,
       description: `Change user (${updatedUser.name} - ${updatedUser.email}) global role from "${user?.globalRole}" to "${updatedUser.globalRole}".`,
       targetName: `${updatedUser.name}`,
-      targetId: `${updatedUser.id}`
+      targetId: `${updatedUser.id}`,
+      fields: [
+        {key:'userName', value: updatedUser.name},
+        {key:'userEmail', value: updatedUser.email},
+        {key:'oldUserGlobalRole', value: user?.globalRole},
+        {key:'newUserGlobalRole', value: updatedUser.globalRole},
+      ]
     })
   }
 

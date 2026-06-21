@@ -1,12 +1,26 @@
 import {
+  IsArray,
   IsEnum,
   IsMongoId,
+  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
 
 import { ActionType } from '../common/types';
+import { Type } from 'class-transformer';
+
+class LogFieldDto {
+  @IsString()
+  @IsNotEmpty()
+  key!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  value!: string;
+}
 
 export class CreateActivityLogDto {
 
@@ -26,5 +40,11 @@ export class CreateActivityLogDto {
   @IsOptional()
   @IsMongoId()
   targetId?: string;
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => LogFieldDto)
+  fields?: LogFieldDto[];
 
 }

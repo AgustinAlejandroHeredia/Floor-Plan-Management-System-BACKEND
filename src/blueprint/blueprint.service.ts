@@ -131,7 +131,11 @@ export class BlueprintService {
         action: ActionType.UPLOAD_BLUEPRINT,
         description: `Blueprint is uploaded for the organization "${organization.name}".`,
         targetName: `${savedBlueprint.blueprintName}`,
-        targetId: `${savedBlueprint.id}`
+        targetId: `${savedBlueprint.id}`,
+        fields: [
+          {key:'organizationName', value:organization.name},
+          {key:'blueprintName', value:savedBlueprint.blueprintName}
+        ]
       })
 
       return savedBlueprint
@@ -268,7 +272,10 @@ export class BlueprintService {
       action: ActionType.EDIT_BLUEPRINT,
       description: `Blueprint "${updated?.blueprintName}" is edited.`,
       targetName: `${updated?.blueprintName}`,
-      targetId: `${updated?.id}`
+      targetId: `${updated?.id}`,
+      fields: [
+        {key:'blueprintName', value:updated?.blueprintName || "def name"}
+      ]
     })
 
     return updated;
@@ -325,7 +332,10 @@ export class BlueprintService {
       action: ActionType.DELETE_BLUEPRINT,
       description: `Blueprint "${blueprint.blueprintName}" is deleted.`,
       targetName: `${blueprint.blueprintName}`,
-      targetId: "none"
+      targetId: "none",
+      fields: [
+        {key:'blueprintName', value:blueprint.blueprintName}
+      ]
     })
 
     return {
@@ -388,6 +398,9 @@ export class BlueprintService {
       description: `Blueprint "${blueprint.blueprintName}" is downloaded.`,
       targetName: `${blueprint.blueprintName}`,
       targetId: `${blueprint._id}`,
+      fields: [
+        {key:'blueprintName', value:blueprint.blueprintName}
+      ]
     })
 
     return {
@@ -587,6 +600,9 @@ export class BlueprintService {
       description: `Blueprint "${blueprint.blueprintName}"'s section views are updated.`,
       targetName: `${blueprint.blueprintName}`,
       targetId: `${blueprint._id}`,
+      fields: [
+        {key:'blueprintName', value:blueprint.blueprintName}
+      ]
     })
 
     return updatedblueprint;

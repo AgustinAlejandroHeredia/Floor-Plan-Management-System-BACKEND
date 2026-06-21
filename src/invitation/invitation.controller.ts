@@ -68,9 +68,10 @@ export class InvitationController {
   @UserRoles(UserRole.SUPERADMIN)
   @Patch('superadmin/refresInvitation/:invitationId')
   refreshInvitation(
+    @Req() req,
     @Param('invitationId') invitationId: string,
   ){
-    return this.invitationService.refreshInvitation(invitationId)
+    return this.invitationService.refreshInvitation(req.user.internalId, invitationId)
   }
 
   @UseGuards(JwtAuthGuard, AccessGuard)

@@ -62,7 +62,10 @@ export class OrganizationService {
         action: ActionType.CREATE_ORGANIZATION,
         description: `Organization created with the name "${savedOrganization.name}".`,
         targetName: `${savedOrganization.name}`,
-        targetId: `${savedOrganization.id}`
+        targetId: `${savedOrganization.id}`,
+        fields: [
+          {key:'organizationName', value:savedOrganization.name}
+        ]
       }).catch(logError => {
         console.log("Error creating log for organization creation: ", logError)
       })
@@ -296,7 +299,10 @@ export class OrganizationService {
         action: ActionType.EDIT_ORGANIZATION,
         description: `Organization edited with the name "${updated.name}".`,
         targetName: `${updated.name}`,
-        targetId: `${updated.id}`
+        targetId: `${updated.id}`,
+        fields: [
+          {key:'organizationName', value:updated.name}
+        ]
       }).catch(logError => {
         console.log("Error creating log for organization update: ", logError)
       })
@@ -333,7 +339,14 @@ export class OrganizationService {
         action: ActionType.EDIT_ORGANIZATION_PERMISSIONS,
         description: `Organization edited with the name "${updated.name}". Create permissions "${current?.createPermission}" -> "${updated.createPermission}. Invite permission "${current?.invitePermission}" -> "${updated.invitePermission}".`,
         targetName: `${updated.name}`,
-        targetId: `${updated.id}`
+        targetId: `${updated.id}`,
+        fields: [
+          {key:'organizationName', value:updated.name},
+          {key:'oldCreatePermission', value:'current?.createPermission'},
+          {key:'newCreatePermission', value:'updated.createPermission'},
+          {key:'oldInvitePermission', value:'current?.invitePermission'},
+          {key:'newInvitePermission', value:'updated.invitePermission'},
+        ]
       }).catch(logError => {
         console.log("Error creating log for organization updateOrganizationActionPermissions: ", logError)
       })
@@ -447,7 +460,10 @@ export class OrganizationService {
       action: ActionType.ADD_USER_TO_ORGANIZATION,
       description: `Added user to the orgnaization "${organization.name}".`,
       targetName: "new membership",
-      targetId: `${orgMembership._id}`
+      targetId: `${orgMembership._id}`,
+      fields: [
+        {key:'organizationName', value:organization.name}
+      ]
     }).catch(logError => {
       console.log("Error creating log for organization addUserToOrganization: ", logError)
     })
@@ -493,7 +509,10 @@ export class OrganizationService {
         action: ActionType.KICK_USER_FROM_ORGANIZATION,
         description: `User was kicked from the organization "${organization.name}".`,
         targetName: "kicked user",
-        targetId: "deleted membershio"
+        targetId: "deleted membership",
+        fields: [
+          {key:'organizationName', value:organization.name}
+        ]
       }).catch(logError => {
         console.log("Error creating log for organization removeUserFromOrganization - kick user: ", logError)
       })
@@ -503,7 +522,10 @@ export class OrganizationService {
         action: ActionType.LEAVE_ORGANIZATION,
         description: `The user left the organization "${organization.name}".`,
         targetName: "user left",
-        targetId: "deleted membership"
+        targetId: "deleted membership",
+        fields: [
+          {key:'organizationName', value:organization.name}
+        ]
       }).catch(logError => {
         console.log("Error creating log for organization removeUserFromOrganization - leave organization: ", logError)
       })
@@ -540,7 +562,11 @@ export class OrganizationService {
       action: ActionType.EDIT_ORGANIZATION_USER_ROLE,
       description: `Edit organization user role. User role "${membership.organizationRole}" -> "${currentRole}"`,
       targetName: "edit organization role",
-      targetId: `${membership._id}`
+      targetId: `${membership._id}`,
+      fields: [
+        {key:'oldRole', value:membership.organizationRole},
+        {key:'newRole', value:currentRole}
+      ]
     })
 
     return this.organizationMembershipService.updateRole(

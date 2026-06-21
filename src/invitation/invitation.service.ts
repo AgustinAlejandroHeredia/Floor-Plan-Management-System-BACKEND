@@ -233,6 +233,10 @@ export class InvitationService {
             savedInvitation.userEmail,
           targetId:
             savedInvitation._id.toString(),
+          fields: [
+            {key:'email', value:savedInvitation.userEmail},
+            {key:'role', value:savedInvitation.userOrganizationRole}
+          ]
         },
       )
 
@@ -311,6 +315,29 @@ export class InvitationService {
 
       await this.invitationModel.deleteOne({ _id: invitation._id})
 
+      const orgName = await this.organizationModel
+        .findById(invitation.organizationId)
+        .select('name')
+        .lean()
+
+      if(!orgName){
+        throw new InternalServerErrorException('orgName not found')
+      }
+
+      // ACTIVITY LOG
+      this.activityLogsService.create(userId, {
+        action: ActionType.JOIN_ORGANIZATION,
+        description: `Joined organization "${orgName.name}" with ${invitation.userOrganizationRole} role.`,
+        targetName: `${orgName}`,
+        targetId: `${invitation.organizationId.toString()}`,
+        fields: [
+          {key:'organizationName', value:orgName.name},
+          {key:'role', value:invitation.userOrganizationRole}
+        ]
+      }).catch(logError => {
+        console.log("Error creating log for organization addUserToOrganization: ", logError)
+      })
+
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -359,9 +386,13 @@ export class InvitationService {
     // ACTIVITY LOG
     this.activityLogsService.create(userId, {
       action: ActionType.SEND_INVITATION,
-      description: `Invitation deleted for the user with emal "${invitation.userEmail}" with "${invitation.userOrganizationRole}" role.`,
+      description: `Invitation deleted for the user with email "${invitation.userEmail}" with "${invitation.userOrganizationRole}" role.`,
       targetName: `${invitation.userEmail}`,
-      targetId: `${invitation.id}`
+      targetId: `${invitation.id}`,
+      fields: [
+        {key:'userEmail', value:invitation.userEmail},
+        {key:'role', value:invitation.userOrganizationRole}
+      ]
     })
 
     await this.invitationModel.findByIdAndDelete(new Types.ObjectId(id))
@@ -510,6 +541,7 @@ export class InvitationService {
   }
 
   async refreshInvitation(
+    userId: string,
     invitationId: string,
   ) {
     const invitation = await this.invitationModel.findByIdAndUpdate(
@@ -525,6 +557,18 @@ export class InvitationService {
     if (!invitation) {
       throw new NotFoundException('Invitation not found')
     }
+
+    // ACTIVITY LOG
+    this.activityLogsService.create(userId, {
+      action: ActionType.REFRESH_INVITATION,
+      description: `Invitation refreshed for the user with email "${invitation.userEmail}" with "${invitation.userOrganizationRole}" role.`,
+      targetName: `${invitation.userEmail}`,
+      targetId: `${invitation.id}`,
+      fields: [
+        {key:'userEmail', value:invitation.userEmail},
+        {key:'role', value:invitation.userOrganizationRole}
+      ]
+    })
 
     return invitation
   }
