@@ -372,8 +372,8 @@ describe('OrganizationService', () => {
         const result = await service.addUserToOrganization(
           orgId,
           userId,
+          OrganizationRole.MEMBER,
           orgAdminId,
-          OrganizationRole.MEMBER
         )
 
         expect(mockOrganizationModel.findById).toHaveBeenCalledTimes(1)
@@ -399,8 +399,8 @@ describe('OrganizationService', () => {
           service.addUserToOrganization(
             orgId,
             userId,
-            orgAdminId,
             OrganizationRole.MEMBER,
+            orgAdminId,
           )
         ).rejects.toThrow(NotFoundException)
 
@@ -428,8 +428,8 @@ describe('OrganizationService', () => {
           service.addUserToOrganization(
             orgId,
             userId,
-            orgAdminId,
             OrganizationRole.MEMBER,
+            orgAdminId,
           )
         ).rejects.toThrow(ConflictException)
 
@@ -461,8 +461,8 @@ describe('OrganizationService', () => {
           service.addUserToOrganization(
             orgId,
             userId,
-            orgAdminId,
             OrganizationRole.MEMBER,
+            orgAdminId,
           )
         ).rejects.toThrow(InternalServerErrorException)
 

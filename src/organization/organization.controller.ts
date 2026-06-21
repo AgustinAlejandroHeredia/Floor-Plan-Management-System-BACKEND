@@ -216,7 +216,7 @@ export class OrganizationController {
     @Param('userId') userId: string,
     @Body('organizationRole') organizationRole?: OrganizationRole,
   ){
-    return this.organizationService.addUserToOrganization(organizationId, userId, req.user.internalId, organizationRole)
+    return this.organizationService.addUserToOrganization(organizationId, userId, organizationRole, req.user.internalId)
   }
 
   // GET MY ORGANIZATIONS

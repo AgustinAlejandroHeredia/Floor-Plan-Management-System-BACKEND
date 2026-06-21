@@ -417,8 +417,8 @@ export class OrganizationService {
   async addUserToOrganization(
     organizationId: string,
     userId: string,
-    adminUserId: string,
     organizationRole?: OrganizationRole,
+    adminUserId?: string,
   ): Promise<OrganizationMembership> {
 
     // ORG EXISTS?
@@ -455,18 +455,21 @@ export class OrganizationService {
       throw new InternalServerErrorException()
     })
 
-    // ACTIVITY LOG
-    this.activityLogsService.create(adminUserId, {
-      action: ActionType.ADD_USER_TO_ORGANIZATION,
-      description: `Added user to the orgnaization "${organization.name}".`,
-      targetName: "new membership",
-      targetId: `${orgMembership._id}`,
-      fields: [
-        {key:'organizationName', value:organization.name}
-      ]
-    }).catch(logError => {
-      console.log("Error creating log for organization addUserToOrganization: ", logError)
-    })
+    if(adminUserId){
+      // ACTIVITY LOG
+      this.activityLogsService.create(adminUserId, {
+        action: ActionType.ADD_USER_TO_ORGANIZATION,
+        description: `Added user to the orgnaization "${organization.name}".`,
+        targetName: "new membership",
+        targetId: `${orgMembership._id}`,
+        fields: [
+          {key:'organizationName', value:organization.name}
+        ]
+      }).catch(logError => {
+        console.log("Error creating log for organization addUserToOrganization: ", logError)
+      })
+    }
+
 
     return orgMembership
   }

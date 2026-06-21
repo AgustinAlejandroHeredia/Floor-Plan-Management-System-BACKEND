@@ -385,12 +385,12 @@ export class InvitationService {
 
     // ACTIVITY LOG
     this.activityLogsService.create(userId, {
-      action: ActionType.SEND_INVITATION,
+      action: ActionType.DELETE_INVIATION,
       description: `Invitation deleted for the user with email "${invitation.userEmail}" with "${invitation.userOrganizationRole}" role.`,
       targetName: `${invitation.userEmail}`,
       targetId: `${invitation.id}`,
       fields: [
-        {key:'userEmail', value:invitation.userEmail},
+        {key:'email', value:invitation.userEmail},
         {key:'role', value:invitation.userOrganizationRole}
       ]
     })
@@ -565,7 +565,7 @@ export class InvitationService {
       targetName: `${invitation.userEmail}`,
       targetId: `${invitation.id}`,
       fields: [
-        {key:'userEmail', value:invitation.userEmail},
+        {key:'email', value:invitation.userEmail},
         {key:'role', value:invitation.userOrganizationRole}
       ]
     })
