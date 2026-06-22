@@ -1,5 +1,84 @@
 {
   "models": [
+       {
+      "id": "v1.2-yolo11mPodr-NorthDirectionDetector",
+      "name": "Keypoints North-South Detector",
+      "AEC_speciality": "North direction",
+      "task": "keypoints",
+      "model_type": "ultralytics", 
+      "version": "1.0.2",
+      "model": "yolo11m-pose",
+        "provenance": {
+              "trained released": "15/05/2026",
+              "trained_by": "Martin Villarreal",
+              "dataset": "Synthetic North",
+              "base_images": "92",
+              "bg_images": "10",
+              "train_images": "24201",
+              "val_images": "6050",
+              "test_images": "6000",
+              "epochs": "3000",
+              "hours":"108",
+              "notebook":"02-Entrena.ipynb"
+      },
+      "metrics": {
+        "mAP50": {
+          "Box":   0.995,
+          "Mask":  0.0,
+          "Pose":  0.995
+        },
+        "mAP50-95": {
+          "Box": 0.993,
+          "Mask":  0.0,
+          "Pose": 0.995
+        }
+      },
+
+      "trained by": " Martin Villarreal  ",
+      "drive_id": "1hZyzZ4kZ_9oMqhA0PAbBXkV8wgLQHki0",
+      "config": {
+        "confidence": 0.4,
+        "slice_height": 640,
+        "slice_width": 640
+      }
+    },
+        {
+      "id": "v1.0-yolo26-arch",
+      "name": "Object Detector - Segmentation for Architecture",
+      "AEC_speciality": "Architecture",
+      "task": "instance segmentation",
+      "model_type": "ultralytics", 
+      "version": "1.0.1",
+      "model": "yol26m-seg",
+      "provenance": {
+              "trained released": "15/05/2026",
+              "trained_by": "Santiago Dos Santos",
+              "dataset": "FloorPlanCAD",
+              "train_images": "8128",
+              "val_images": "2033",
+              "test_images": "5502",
+              "epochs": "162",
+              "hours":"10.314",
+              "notebook":"FloorPlanCad.ipynb"
+      },
+      "metrics": {
+        "mAP50": {
+          "Box": 0.8021,
+          "Mask": 0.7545
+        },
+        "mAP50-95": {
+          "Box": 0.7165,
+          "Mask": 0.5053
+        }
+      },
+      "trained by": "Santiago Dos Santos",
+      "drive_id": "1giC8oQ2-tivH9yFz89fltDvE39drQpLt",
+      "config": {
+        "confidence": 0.4,
+        "slice_height": 640,
+        "slice_width": 640
+      }
+    },
 
     {
       "id": "v1.0-yolo26-arch",
@@ -75,12 +154,6 @@
         "slice_height": 928,
         "slice_width": 928
       }
-    },
-
-    {
-      "name": "Test existence",
-      "version": "1.0.0",
-      "AEC_speciality": "Existence"
-    }
+    }    
   ]
 }
