@@ -22,6 +22,7 @@ import { OrganizationMembershipService } from 'src/organization_membership/organ
 import { Project, ProjectDocument } from 'src/project/schemas/project.schema';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActionType } from 'src/activity-logs/common/types';
+import * as https from 'https'
 
 @Injectable()
 export class BlueprintService {
@@ -292,6 +293,7 @@ export class BlueprintService {
         storageId: 1,
         storageThumbnailId: 1,
         originalBlueprintId: 1,
+        organizationId: 1,
       })
       .lean();
 
@@ -432,6 +434,11 @@ export class BlueprintService {
     // pedimos la imagen como stream
     const response = await axios.get(signedUrl, {
       responseType: 'stream',
+      headers: {
+        'Accept-Encoding': 'identity',
+      },
+      httpsAgent: new https.Agent({ keepAlive: false }),
+      timeout: 30000,
     });
 
     return {
