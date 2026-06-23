@@ -46,6 +46,24 @@ source  .venv/bin/activate
 
 ```bash
 npm install
-npm run start:dev   # development (watch mode)
-npm run start       # production
+```
+
+Use these two commands in separate terminals:
+
+Frontend:
+
+```bash
+npm run dev
+```
+Backend:
+
+cd d:\gitworkspace\AgusHeredia\Floor-Plan-Management-System-BACKEND
+```bash
+npm run start:dev
+```
+If you want to stop them later, use:
+Ctrl+C in each terminal
+or, if no terminal is visible, run:
+```bash
+taskkill /F /IM node.exe
 ```
