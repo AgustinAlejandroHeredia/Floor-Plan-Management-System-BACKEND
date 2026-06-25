@@ -47,7 +47,13 @@ export class SectionView {
     type: SectionSize,
     required: true,
   })
-  size: SectionSize;
+  size?: SectionSize;
+
+  @Prop({
+    type: Number,
+    required: false
+  })
+  radius?: number
 }
 
 @Schema({ _id: false })

@@ -136,8 +136,11 @@ export class OrganizationController {
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({ status: 200, description: 'Organization found' })
   @ApiResponse({ status: 404, description: 'Organization not found' })
-  findOne(@Param('organizationId') organizationId: string) {
-    return this.organizationService.findOne(organizationId);
+  findOne(
+    @Req() req,
+    @Param('organizationId') organizationId: string,
+  ) {
+    return this.organizationService.findOneWithMembershipVerification(req.user.internalId, organizationId, req.user.globalRole);
   }
 
   // GET ORGANIZATION ACTION PERMISSIONS

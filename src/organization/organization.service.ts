@@ -12,7 +12,7 @@ import { Organization, OrganizationDocument } from './schemas/organization.schem
 // RELATIONS
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 import { OrganizationMembership } from 'src/organization_membership/schemas/organization_membership.schema';
-import { OrganizationRole } from 'src/user/common/role.enum';
+import { OrganizationRole, UserRole } from 'src/user/common/role.enum';
 import { OrganizationActionPermission } from 'src/organization/common/orgPermission.enum';
 import { OrganizationWithRoles } from './common/types';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
@@ -27,6 +27,15 @@ export class OrganizationService {
     private readonly organizationMembershipService: OrganizationMembershipService,
     private readonly activityLogsService: ActivityLogsService,
   ) {}
+
+  private async userBelongsToOrganization(userId: string, organizationId: string): Promise<Boolean> {
+    const membership = await this.organizationMembershipService.findByUserIdAndOrganizationId(userId, organizationId)
+    if(membership){
+      return true
+    }else{
+      return false
+    }
+  } 
 
   // CREATE
   async create(
@@ -223,9 +232,26 @@ export class OrganizationService {
   }
 
   // GET ONE
-  async findOne(id: string): Promise<Organization> {
+  async findOne(organizationId: string): Promise<Organization> {
     const organization = await this.organizationModel
-      .findById(new Types.ObjectId(id))
+      .findById(new Types.ObjectId(organizationId))
+      .lean();
+
+    if (!organization) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    return organization;
+  }
+
+  // GET ONE WITH VERIFICATION
+  async findOneWithMembershipVerification(userId: string, organizationId: string, userGlobalRole: string): Promise<Organization> {
+    if(!this.userBelongsToOrganization(userId, organizationId) && userGlobalRole !== UserRole.SUPERADMIN){
+      throw new ForbiddenException('Not a member or superadmin')
+    }
+
+    const organization = await this.organizationModel
+      .findById(new Types.ObjectId(organizationId))
       .lean();
 
     if (!organization) {

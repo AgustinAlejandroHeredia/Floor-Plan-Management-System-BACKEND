@@ -15,7 +15,7 @@ import { ThumbnailService } from 'src/thumbnail/thumbnail.service';
 
 import { randomUUID } from "crypto";
 import axios from 'axios';
-import { UpdateSectionViewsDto } from './dto/update-section-views';
+import { SectionViewDto, UpdateSectionViewsDto } from './dto/update-section-views';
 import { UserRole } from 'src/user/common/role.enum';
 import { Organization, OrganizationDocument } from 'src/organization/schemas/organization.schema';
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
@@ -713,5 +713,75 @@ export class BlueprintService {
       projectId: project._id.toString(),
       projectName: project.projectName,
     };
+  }
+
+  async addTestingArea(
+    userGlobalRole: string,
+    blueprintId: string,
+  ) {
+
+    if (userGlobalRole !== UserRole.SUPERADMIN) {
+      return;
+    }
+
+    const polygonArea = {
+      type: "polygon",
+      label: "polygon area test",
+      confidence: 1,
+      coordsList: [
+        { x: 3000, y: 3000 },
+        { x: 2950, y: 3080 },
+        { x: 3050, y: 3080 }
+      ],
+      size: {
+        width: 100,
+        height: 80,
+      }
+    }
+
+    const polylineArea = {
+      type: "polyline",
+      label: "polyline area test",
+      confidence: 1,
+      coordsList: [
+        { x: 1050, y: 3000 },
+        { x: 1050, y: 3050 },
+        { x: 1050, y: 3100 },
+      ],
+    }
+
+    const circleArea = {
+      type: "circle",
+      label: "circle area test",
+      confidence: 1,
+      coordsList: [
+        { x: 2050, y: 3000 },
+      ],
+      size: {
+        width: 76,
+        height: 76,
+      },
+      radius: 38,
+    }
+
+    const dto: UpdateSectionViewsDto = {
+      sectionViews: [
+        polygonArea,
+        circleArea,
+        polylineArea,
+      ]
+    }
+
+    await this.blueprintModel.findByIdAndUpdate(
+      new Types.ObjectId(blueprintId),
+      {
+        sectionViews: dto.sectionViews,
+      },
+      {
+        new: true,
+      },
+    )
+
+    console.log("ADDS TESTING AREAS")
   }
 }

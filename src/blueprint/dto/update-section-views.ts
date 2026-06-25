@@ -42,7 +42,11 @@ export class SectionViewDto {
 
   @ValidateNested()
   @Type(() => SizeDto)
-  size: SizeDto;
+  size?: SizeDto;
+
+  @IsOptional()
+  @IsNumber()
+  radius?: number
 }
 
 export class UpdateSectionViewsDto {

@@ -273,4 +273,19 @@ export class BlueprintController {
     return this.blueprintService.getBlueprintProjectInfo(blueprintId, req.user.internalId, req.user.globalRole)
   }
 
+  // ADD TESTING AREAS
+  @Patch('/admin/addTestAreas/:blueprintId')
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @ApiOperation({ summary: 'Add areas for testing to the blueprint indicated' })
+  @ApiParam({ name: 'blueprintId', type: String })
+  addTestingArea(
+    @Req() req,
+    @Param('blueprintId') blueprintId: string,
+  ){
+    return this.blueprintService.addTestingArea(
+      req.user.globalRole,
+      blueprintId
+    )
+  }
+
 } 
