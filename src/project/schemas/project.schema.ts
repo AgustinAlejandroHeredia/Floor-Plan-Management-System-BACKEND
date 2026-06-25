@@ -2,8 +2,21 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTypes, Types } from 'mongoose';
 import { OrganizationActionPermission } from 'src/organization/common/orgPermission.enum';
 import { ProjectStatus } from 'src/project/common/status.enum';
+import { CustomFieldType } from '../common/types';
 
 export type ProjectDocument = Project & Document;
+
+@Schema({ _id: false })
+export class CustomField {
+    @Prop({ required: true })
+    name: string;
+
+    @Prop({ required: true, enum: CustomFieldType })
+    type: CustomFieldType;
+
+    @Prop({ required: true, type: SchemaTypes.Mixed })
+    value: string | number | Date
+}
 
 @Schema()
 export class Project {
@@ -40,11 +53,10 @@ export class Project {
 
 
     @Prop({
-        type: Map,
-        of: SchemaTypes.Mixed,
-        default: {},
+        type: [CustomField],
+        default: [],
     })
-    customFields: Map<string, any>
+    customFields: CustomField[]
 
 }
 

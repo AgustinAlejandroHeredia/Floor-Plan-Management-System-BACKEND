@@ -1,6 +1,7 @@
-import { Transform } from 'class-transformer';
-import { IsString, IsOptional, IsEnum, IsObject, IsBoolean } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsString, IsOptional, IsEnum, IsObject, IsBoolean, IsArray, ValidateNested } from 'class-validator';
 import { ProjectStatus } from 'src/project/common/status.enum';
+import { CustomFieldDto } from './customfield.dto';
 
 export class UpdateProjectDto {
 
@@ -22,7 +23,9 @@ export class UpdateProjectDto {
   basement?: boolean
 
   @IsOptional()
-  @IsObject()
-  customFields?: Record<string, any>
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CustomFieldDto)
+  customFields?: CustomFieldDto[]
 
 }

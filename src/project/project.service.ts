@@ -42,8 +42,11 @@ export class ProjectService {
     // Check for permissions
     const myOrganizationRole = await this.organizationService.myOrganizationRole(creatorUserId, organizationId)
     const organizationPermissions = await this.organizationService.getOrganizationActionPermissions(organizationId)
-    if(myOrganizationRole.toLowerCase() !== organizationPermissions.createPermission.toLowerCase()){
-      throw new ForbiddenException("access denied")
+    if (
+      organizationPermissions.createPermission === "admins" &&
+      myOrganizationRole !== "admin"
+    ) {
+      throw new ForbiddenException("access denied");
     }
 
     // Create project
@@ -142,10 +145,15 @@ export class ProjectService {
     // Check for permissions - edit permission comes from creation permission from organization
     const myOrganizationRole = await this.organizationService.myOrganizationRole(userId, project.organizationId.toString())
     const organizationPermissions = await this.organizationService.getOrganizationActionPermissions(project.organizationId.toString())
-    if(myOrganizationRole.toLowerCase() !== organizationPermissions.createPermission.toLowerCase()){
-      throw new ForbiddenException("access denied")
+    if (
+      organizationPermissions.createPermission === "admins" &&
+      myOrganizationRole !== "admin"
+    ) {
+      throw new ForbiddenException("access denied");
     }
     
+    console.log("CHECK WHAT GETS HERE : ", dto)
+
     const updated = await this.projectModel.findByIdAndUpdate(
       projectId,
       dto,

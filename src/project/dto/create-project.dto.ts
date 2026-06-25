@@ -1,6 +1,7 @@
-import { IsBoolean, IsMongoId, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsMongoId, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
+import { CustomFieldDto } from './customfield.dto';
 
 export class CreateProjectDto {
 
@@ -18,8 +19,10 @@ export class CreateProjectDto {
   basement: boolean
 
   @IsOptional()
-  @IsObject()
-  customFields?: Record<string, any>
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CustomFieldDto)
+  customFields?: CustomFieldDto[]
 
 }
 
