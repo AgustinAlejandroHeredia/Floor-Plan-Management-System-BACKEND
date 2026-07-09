@@ -1,6 +1,24 @@
-import { IsArray, IsEnum, IsMongoId, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { SpecialtyTag, BlueprintLabel, BlueprintView } from '../common/blueprintLabel';
+import { IsArray, IsBoolean, IsEnum, IsMongoId, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { SpecialtyTag, BlueprintView } from '../common/blueprintLabel';
 import { Transform, Type } from 'class-transformer';
+
+export class LevelsRangeDto {
+  @IsOptional()
+  @IsBoolean()
+  basement?: boolean
+
+  @IsOptional()
+  @IsBoolean()
+  roof?: boolean
+
+  @IsOptional()
+  @IsNumber()
+  bottom?: number;
+
+  @IsOptional()
+  @IsNumber()
+  top?: number;
+}
 
 export class SectionViewDto {
   @IsString()
@@ -32,7 +50,6 @@ export class CreateBlueprintDto {
   @IsMongoId()
   organizationId: string;
 
-  // NEW TAGS
   @IsOptional()
   @IsArray()
   @IsEnum(SpecialtyTag, { each: true })
@@ -40,8 +57,9 @@ export class CreateBlueprintDto {
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  levels?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => LevelsRangeDto)
+  levels?: LevelsRangeDto[];
 
   @IsOptional()
   @IsEnum(BlueprintView)
@@ -55,14 +73,13 @@ export class CreateBlueprintDto {
 
   @IsOptional()
   @IsMongoId()
-  originalBlueprintId?: string 
+  originalBlueprintId?: string;
 
   @IsOptional()
   @IsNumber()
-  width?: number
+  width?: number;
   
   @IsOptional()
   @IsNumber()
-  height?: number
-
+  height?: number;
 }

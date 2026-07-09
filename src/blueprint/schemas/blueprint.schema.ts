@@ -65,6 +65,18 @@ export class CropMade {
   blueprintName: string;
 }
 
+@Schema({ _id: false })
+export class LevelsRange {
+  @Prop({ required: false, type: Boolean, default: false })
+  basement?: boolean
+  @Prop({ required: false, type: Boolean, default: false })
+  roof?: boolean
+  @Prop({ required: false, type: Number })
+  bottom?: number
+  @Prop({ required: false, type: Number })
+  top?: number
+}
+
 @Schema()
 export class Blueprint {
   @Prop({ required: true, type: String })
@@ -112,10 +124,10 @@ export class Blueprint {
   specialties: SpecialtyTag[];
 
   @Prop({
-    type: [String],
+    type: [LevelsRange],
     default: [],
   })
-  levels: string[];
+  levels: LevelsRange[];
 
   @Prop({
     type: String,

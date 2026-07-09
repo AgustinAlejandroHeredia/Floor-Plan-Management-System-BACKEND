@@ -46,6 +46,7 @@ export class BlueprintService {
     userId: string,
     userGlobalRole: string,
   ): Promise<Blueprint> {
+    
     if (!file) {
       throw new BadRequestException('File required');
     }
