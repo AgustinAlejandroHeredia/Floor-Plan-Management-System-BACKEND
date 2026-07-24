@@ -21,6 +21,7 @@ import { AiProcessingModule } from './ai-processing/ai-processing.module';
 import { InferenceJobModule } from './inference-job/inference-job.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 import { EmailModule } from './email/email.module';
+import { StorageModule } from './storage/storage.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
@@ -74,6 +75,8 @@ import { APP_GUARD } from '@nestjs/core';
     ActivityLogsModule,
 
     EmailModule,
+
+    StorageModule,
 
   ],
   controllers: [AppController],
