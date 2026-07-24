@@ -42,6 +42,49 @@
         "slice_width": 640
       }
     },
+           {
+      "id": "v1.2-yolo11mPose-DimDetector",
+      "name": "Keypoints Dimensions Detector",
+      "AEC_speciality": "Blueprint dimensions",
+      "task": "keypoints",
+      "status": "latest",
+      "model_type": "ultralytics", 
+      "version": "1.0.2",
+      "model": "yolo11m-pose",
+        "provenance": {
+              "trained released": "15/07/2026",
+              "trained_by": "Martin Villarreal",
+              "dataset": "Synthetic Dimensions",
+              "base_images": "-",
+              "bg_images": "-",
+              "train_images": "9500",
+              "val_images": "2000",
+              "test_images": "-",
+              "epochs": "1000",
+              "hours":"100",
+              "notebook":"02-Entrena.ipynb"
+      },
+      "metrics": {
+        "mAP50": {
+          "Box":   0.9418,
+          "Mask":  0.0,
+          "Pose":  0.94151
+        },
+        "mAP50-95": {
+          "Box": 0.8993,
+          "Mask":  0.0,
+          "Pose": 0.93919
+        }
+      },
+
+      "trained by": " Martin Villarreal  ",
+      "drive_id": "15GvXEyjLt3CW4tP7uSsAXpI4MZFzE7p0",
+      "config": {
+        "confidence": 0.4,
+        "slice_height": 640,
+        "slice_width": 640
+      }
+    },
         {
       "id": "v1.0-yolo26-arch",
       "name": "Object Detector - Segmentation for Architecture",
