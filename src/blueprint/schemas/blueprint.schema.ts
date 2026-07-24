@@ -155,6 +155,18 @@ export class Blueprint {
   @Prop({ required: false, type: Number })
   height?: number;
 
+  @Prop({ required: false, type: Number })
+  scale?: number;
+
+  @Prop({ required: false, type: String, enum: ['ai', 'manual'] })
+  scale_source?: string;
+
+  @Prop({ required: false, type: Number })
+  orientation?: number;
+
+  @Prop({ required: false, type: String, enum: ['ai', 'manual'] })
+  orientation_source?: string;
+
   @Prop({
     type: [CropMade],
     default: [],

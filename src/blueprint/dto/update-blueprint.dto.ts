@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { IsString, IsOptional, IsArray, ValidateNested, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsArray, ValidateNested, IsEnum, IsNumber, IsIn } from 'class-validator';
 import { CropMadeDto } from './crop-made.dto';
 import { SpecialtyTag, BlueprintView } from '../common/blueprintLabel';
 import { SectionViewDto, LevelsRangeDto } from './create-blueprint.dto';
@@ -42,4 +42,13 @@ export class UpdateBlueprintDto {
   @ValidateNested({ each: true })
   @Type(() => CropMadeDto)
   cropsMade?: CropMadeDto[];
+
+  @IsOptional()
+  @IsNumber()
+  scale?: number;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['ai', 'manual'])
+  scale_source?: string;
 }

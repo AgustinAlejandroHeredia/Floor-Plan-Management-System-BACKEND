@@ -77,4 +77,11 @@ export class InferenceJobGateway implements OnGatewayConnection {
   ): void {
     this.server.to(`job:${jobId}`).emit('inference:update', { status, result });
   }
+
+  emitScaleOrientationDetected(
+    jobId: string,
+    payload: { scale: number | null; orientation: number | null },
+  ): void {
+    this.server.to(`job:${jobId}`).emit('inference:scale_orientation', payload);
+  }
 }

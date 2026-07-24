@@ -465,6 +465,43 @@ export class InferenceJobService implements OnModuleInit {
         },
       )
 
+      // =====================================================
+      // SCALE & ORIENTATION DETECTION
+      // =====================================================
+
+      try {
+        const scaleOrientation = await this.runScaleOrientationDetection(
+          tempFilePath,
+          signal,
+        );
+
+        const aiFields: Record<string, unknown> = {};
+
+        if (scaleOrientation.scale !== null && scaleOrientation.scale !== undefined) {
+          aiFields['scale'] = scaleOrientation.scale;
+          aiFields['scale_source'] = 'ai';
+        }
+
+        if (scaleOrientation.orientation !== null && scaleOrientation.orientation !== undefined) {
+          aiFields['orientation'] = scaleOrientation.orientation;
+          aiFields['orientation_source'] = 'ai';
+        }
+
+        if (Object.keys(aiFields).length > 0) {
+          await this.blueprintModel.findByIdAndUpdate(
+            new Types.ObjectId(updatedJob!.blueprintId),
+            aiFields,
+          );
+
+          this.gateway.emitScaleOrientationDetected(jobId, {
+            scale: scaleOrientation.scale,
+            orientation: scaleOrientation.orientation,
+          });
+        }
+      } catch (scaleOrientationErr: unknown) {
+        console.warn('Scale/orientation detection failed:', scaleOrientationErr);
+      }
+
     } catch (err: unknown) {
 
       const isAbort =
@@ -732,6 +769,66 @@ export class InferenceJobService implements OnModuleInit {
             reject(err),
           ),
       );
+    });
+  }
+
+  private runScaleOrientationDetection(
+    imagePath: string,
+    signal: AbortSignal,
+  ): Promise<{ scale: number | null; orientation: number | null }> {
+    return new Promise((resolve) => {
+      if (signal.aborted) {
+        return resolve({ scale: null, orientation: null });
+      }
+
+      const scriptPath = path.join(
+        process.cwd(),
+        'scripts',
+        'scale_orientation_detector.py',
+      );
+
+      const pythonExecutable = this.configService.get<string>(
+        'PYTHON_EXECUTABLE',
+        'python3',
+      );
+
+      const child = spawn(pythonExecutable, [scriptPath, imagePath]);
+
+      const stdoutChunks: Buffer[] = [];
+      const stderrChunks: Buffer[] = [];
+
+      child.stdout.on('data', (chunk: Buffer) => stdoutChunks.push(chunk));
+      child.stderr.on('data', (chunk: Buffer) => stderrChunks.push(chunk));
+
+      child.on('close', () => {
+        const stderr = Buffer.concat(stderrChunks).toString('utf8');
+        if (stderr) {
+          console.log('[scale_orientation_detector stderr]', stderr);
+        }
+
+        const stdout = Buffer.concat(stdoutChunks).toString('utf8');
+        try {
+          const match = stdout.match(
+            /<scale_orientation>([\s\S]*?)<\/scale_orientation>/,
+          );
+          if (match) {
+            const parsed = JSON.parse(match[1].trim()) as {
+              scale: number | null;
+              orientation: number | null;
+            };
+            resolve(parsed);
+          } else {
+            resolve({ scale: null, orientation: null });
+          }
+        } catch {
+          resolve({ scale: null, orientation: null });
+        }
+      });
+
+      child.on('error', (err) => {
+        console.warn('[scale_orientation_detector] spawn error:', err);
+        resolve({ scale: null, orientation: null });
+      });
     });
   }
 
