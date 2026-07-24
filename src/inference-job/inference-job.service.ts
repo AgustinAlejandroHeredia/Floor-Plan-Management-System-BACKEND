@@ -297,8 +297,15 @@ export class InferenceJobService implements OnModuleInit {
         },
       );
 
-      const ext =
-        path.extname(filename) || '.jpg';
+      const rawBuffer = Buffer.from(response.data);
+      // Detect WebP by magic bytes (RIFF....WEBP) regardless of stored filename extension,
+      // since storage providers may have converted the image to WebP for compression.
+      const isWebP =
+        rawBuffer.length >= 12 &&
+        rawBuffer.subarray(0, 4).toString('ascii') === 'RIFF' &&
+        rawBuffer.subarray(8, 12).toString('ascii') === 'WEBP';
+
+      const ext = isWebP ? '.webp' : (path.extname(filename) || '.jpg');
 
       tempFilePath = path.join(
         os.tmpdir(),
@@ -307,7 +314,7 @@ export class InferenceJobService implements OnModuleInit {
 
       await fs.promises.writeFile(
         tempFilePath,
-        response.data,
+        rawBuffer,
       );
 
       signal.throwIfAborted();

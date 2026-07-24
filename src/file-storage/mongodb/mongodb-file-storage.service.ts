@@ -36,7 +36,8 @@ export class MongoDbFileStorageService implements FileStorageService {
       let buffer = file.buffer;
       let contentType = file.mimetype;
 
-      if (IMAGE_TYPES.has(file.mimetype)) {
+      const webpEnabled = this.config.get<string>('WEBP_COMPRESSION_ENABLED') !== 'false';
+      if (webpEnabled && IMAGE_TYPES.has(file.mimetype)) {
         buffer = await sharp(file.buffer)
           .webp({ quality: WEBP_QUALITY, effort: 4 })
           .toBuffer();
