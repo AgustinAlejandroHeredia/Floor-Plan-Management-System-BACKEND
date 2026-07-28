@@ -12,6 +12,14 @@ import { UserRole } from 'src/user/common/role.enum';
 import { Project } from 'src/project/schemas/project.schema';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
+import { EventEmitter } from 'events';
+import { Readable } from 'stream';
+import axios from 'axios';
+import { spawn } from 'child_process';
+
+jest.mock('child_process', () => ({
+  spawn: jest.fn(),
+}));
 
 describe('BlueprintService', () => {
 
@@ -45,6 +53,7 @@ describe('BlueprintService', () => {
       )
 
     mockBlueprintModel.findById = jest.fn()
+    mockBlueprintModel.findByIdAndUpdate = jest.fn()
     mockBlueprintModel.findByIdAndDelete = jest.fn()
 
     mockOrganizationMembershipService = {
@@ -116,6 +125,58 @@ describe('BlueprintService', () => {
       )
     })
 
+
+    describe('detectScaleForBlueprint', () => {
+
+      it('should update the blueprint scale using AI detection', async () => {
+        const blueprintId = '69c30bd8d16ceac57816ee7d';
+        const blueprint = {
+          _id: blueprintId,
+          filename: 'blueprint.png',
+          organizationId: '69c30bd8d16ceac57816ee7c',
+        };
+
+        mockBlueprintModel.findById
+          .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue(blueprint) })
+          .mockReturnValueOnce({ lean: jest.fn().mockResolvedValue({ ...blueprint, scale: 0.123, scale_source: 'ai' }) });
+
+        mockBlueprintModel.findByIdAndUpdate.mockResolvedValue({
+          ...blueprint,
+          scale: 0.123,
+          scale_source: 'ai',
+        });
+
+        mockStorageService.getSignedDownloadUrl.mockResolvedValue('https://example.com/blueprint.png');
+
+        jest.spyOn(axios, 'get').mockResolvedValue({
+          data: Readable.from([Buffer.from('fake-image')]),
+          headers: { 'content-type': 'image/png' },
+        } as any);
+
+        const child = new EventEmitter() as any;
+        child.stdout = new EventEmitter();
+        child.stderr = new EventEmitter();
+        (spawn as jest.Mock).mockReturnValue(child);
+
+        const result = await service.detectScaleForBlueprint(
+          blueprintId,
+          test_user_id_string,
+          UserRole.NONE,
+        );
+
+        child.stdout.emit('data', Buffer.from('<scale_orientation>{"scale":0.123,"orientation":0.0}</scale_orientation>'));
+        child.stdout.emit('end');
+        child.stderr.emit('end');
+        child.emit('close', 0);
+
+        expect(result.scale).toBe(0.123);
+        expect(result.scale_source).toBe('ai');
+        expect(mockBlueprintModel.findByIdAndUpdate).toHaveBeenCalledWith(
+          expect.anything(),
+          { scale: 0.123, scale_source: 'ai' },
+        );
+      });
+    });
 
     describe('create', () => {
 

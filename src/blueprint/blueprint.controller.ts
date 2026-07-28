@@ -136,6 +136,18 @@ export class BlueprintController {
   }
 
   // UPDATE
+  @Patch(':id/scale/ai')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Detect the blueprint scale with AI and save it as AI-derived' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Blueprint scale detected successfully' })
+  detectScaleWithAi(
+    @Param('id') id: string,
+    @Req() req,
+  ) {
+    return this.blueprintService.detectScaleForBlueprint(id, req.user.internalId, req.user.globalRole);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Actualizar un blueprint' })

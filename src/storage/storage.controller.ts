@@ -31,7 +31,8 @@ export class StorageController {
     return this.bucket;
   }
 
-  @Get(':filename(*)')
+  //@Get(':filename(*)')
+  @Get(':filename')
   async serveFile(
     @Param('filename') filename: string,
     @Res() res: Response,

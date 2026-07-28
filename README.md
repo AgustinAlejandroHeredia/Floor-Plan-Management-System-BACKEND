@@ -24,6 +24,7 @@
 The AI inference step runs `scripts/yolo_inference.py`. Dependencies are declared in `pyproject.toml` (requires Python ≥ 3.13).
 
 ```bash
+python -m pip install uv
 uv sync
 
 ```

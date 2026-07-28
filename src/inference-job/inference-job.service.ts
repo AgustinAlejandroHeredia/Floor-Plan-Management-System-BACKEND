@@ -17,6 +17,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import axios from 'axios';
+import { getPythonExecutable } from 'src/utils/python-executable';
 
 import {
   InferenceJob,
@@ -794,9 +795,8 @@ export class InferenceJobService implements OnModuleInit {
         'scale_orientation_detector.py',
       );
 
-      const pythonExecutable = this.configService.get<string>(
-        'PYTHON_EXECUTABLE',
-        'python3',
+      const pythonExecutable = getPythonExecutable(
+        this.configService.get<string>('PYTHON_EXECUTABLE'),
       );
 
       const child = spawn(pythonExecutable, [scriptPath, imagePath]);

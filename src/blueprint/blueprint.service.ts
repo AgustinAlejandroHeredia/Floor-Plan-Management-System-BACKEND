@@ -15,14 +15,18 @@ import { ThumbnailService } from 'src/thumbnail/thumbnail.service';
 
 import { randomUUID } from "crypto";
 import axios from 'axios';
+import { promises as fs } from 'fs';
+import * as https from 'https';
+import * as os from 'os';
+import * as path from 'path';
 import { SectionViewDto, UpdateSectionViewsDto } from './dto/update-section-views';
 import { UserRole } from 'src/user/common/role.enum';
+import { ScaleDetectionService } from 'src/scale-detection/scale-detection.service';
 import { Organization, OrganizationDocument } from 'src/organization/schemas/organization.schema';
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 import { Project, ProjectDocument } from 'src/project/schemas/project.schema';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActionType } from 'src/activity-logs/common/types';
-import * as https from 'https'
 
 @Injectable()
 export class BlueprintService {
@@ -37,6 +41,7 @@ export class BlueprintService {
     private readonly thumbnailService: ThumbnailService,
     private readonly organizationMembershipService: OrganizationMembershipService,
     private readonly activityLogsService: ActivityLogsService,
+    private readonly scaleDetectionService: ScaleDetectionService,
   ) {}
 
   // CREATE (upload + mongo)
@@ -244,6 +249,66 @@ export class BlueprintService {
   // GET by user
   async findByUser(userId: string) {
     return this.blueprintModel.find({ uploadedBy: userId }).lean();
+  }
+
+  async detectScaleForBlueprint(
+    id: string,
+    userId: string,
+    userGlobalRole: string,
+  ): Promise<{ scale: number | null; scale_source: 'ai' | null ;model_loaded: boolean | null}> {
+    const blueprint = await this.blueprintModel.findById(new Types.ObjectId(id)).lean();
+
+    if (!blueprint) {
+      throw new NotFoundException('Blueprint not found');
+    }
+
+    await this.organizationMembershipService.validateOrganizationAccess(
+      userId,
+      blueprint.organizationId.toString(),
+      userGlobalRole,
+    );
+
+    const signedUrl = await this.storageService.getSignedDownloadUrl(blueprint.filename);
+    const response = await axios.get(signedUrl, {
+      responseType: 'arraybuffer',
+      timeout: 30000,
+    });
+
+    const contentType = response.headers['content-type'] || 'image/png';
+    const extension = contentType.includes('image/jpeg') || contentType.includes('image/jpg')
+      ? '.jpg'
+      : contentType.includes('image/png')
+        ? '.png'
+        : '.bin';
+
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bp-scale-'));
+    const tempFilePath = path.join(tempDir, `blueprint${extension}`);
+
+    try {
+      await fs.writeFile(tempFilePath, Buffer.from(response.data));
+
+      const aiResult = await this.scaleDetectionService.detectScale(tempFilePath);
+
+      const aiScale = aiResult?.scale ?? null;
+      const modelLoaded = aiResult?.model_loaded ?? false;
+
+      if (aiScale === null || !Number.isFinite(aiScale)) {
+        return { scale: null, scale_source: null, model_loaded: modelLoaded };
+      }
+
+      await this.blueprintModel.findByIdAndUpdate(
+        id,
+        {
+          scale: aiScale,
+          scale_source: 'ai',
+        },
+        { new: true },
+      );
+
+      return { scale: aiScale, scale_source: 'ai', model_loaded: modelLoaded };
+    } finally {
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    }
   }
 
   // UPDATE
