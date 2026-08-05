@@ -22,6 +22,7 @@ import * as path from 'path';
 import { SectionViewDto, UpdateSectionViewsDto } from './dto/update-section-views';
 import { UserRole } from 'src/user/common/role.enum';
 import { ScaleDetectionService } from 'src/scale-detection/scale-detection.service';
+import { OrientationDetectionService } from 'src/orientation-detection/orientation-detection.service';
 import { Organization, OrganizationDocument } from 'src/organization/schemas/organization.schema';
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 import { Project, ProjectDocument } from 'src/project/schemas/project.schema';
@@ -42,6 +43,7 @@ export class BlueprintService {
     private readonly organizationMembershipService: OrganizationMembershipService,
     private readonly activityLogsService: ActivityLogsService,
     private readonly scaleDetectionService: ScaleDetectionService,
+    private readonly orientationDetectionService: OrientationDetectionService,
   ) {}
 
   // CREATE (upload + mongo)
@@ -255,7 +257,13 @@ export class BlueprintService {
     id: string,
     userId: string,
     userGlobalRole: string,
-  ): Promise<{ scale: number | null; scale_source: 'ai' | null ;model_loaded: boolean | null}> {
+  ): Promise<{
+    scale: number | null;
+    scale_source: 'ai' | null;
+    orientation: number | null;
+    orientation_source: 'ai' | null;
+    model_loaded: boolean | null;
+  }> {
     const blueprint = await this.blueprintModel.findById(new Types.ObjectId(id)).lean();
 
     if (!blueprint) {
@@ -288,24 +296,39 @@ export class BlueprintService {
       await fs.writeFile(tempFilePath, Buffer.from(response.data));
 
       const aiResult = await this.scaleDetectionService.detectScale(tempFilePath);
+      const orientationResult = await this.orientationDetectionService.detectOrientation(tempFilePath);
 
       const aiScale = aiResult?.scale ?? null;
       const modelLoaded = aiResult?.model_loaded ?? false;
+      const aiOrientation = orientationResult?.orientation ?? null;
+      const orientationModelLoaded = orientationResult?.model_loaded ?? false;
 
-      if (aiScale === null || !Number.isFinite(aiScale)) {
-        return { scale: null, scale_source: null, model_loaded: modelLoaded };
+      const updateData: any = {};
+      if (aiScale !== null && Number.isFinite(aiScale)) {
+        updateData.scale = aiScale;
+        updateData.scale_source = 'ai';
+      }
+      if (aiOrientation !== null && Number.isFinite(aiOrientation)) {
+        updateData.orientation = aiOrientation;
+        updateData.orientation_source = 'ai';
       }
 
-      await this.blueprintModel.findByIdAndUpdate(
-        id,
-        {
-          scale: aiScale,
-          scale_source: 'ai',
-        },
-        { new: true },
-      );
+      if (Object.keys(updateData).length > 0) {
+        await this.blueprintModel.findByIdAndUpdate(
+          id,
+          updateData,
+          { new: true },
+        );
+      }
 
-      return { scale: aiScale, scale_source: 'ai', model_loaded: modelLoaded };
+      return {
+        scale: aiScale,
+        scale_source: aiScale !== null && Number.isFinite(aiScale) ? 'ai' : null,
+        orientation: aiOrientation,
+        orientation_source:
+          aiOrientation !== null && Number.isFinite(aiOrientation) ? 'ai' : null,
+        model_loaded: modelLoaded || orientationModelLoaded,
+      };
     } finally {
       await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
     }

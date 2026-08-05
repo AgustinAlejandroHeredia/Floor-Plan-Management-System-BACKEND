@@ -148,6 +148,18 @@ export class BlueprintController {
     return this.blueprintService.detectScaleForBlueprint(id, req.user.internalId, req.user.globalRole);
   }
 
+  @Patch(':id/orientation/ai')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Detect the blueprint north direction with AI and save it as AI-derived' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Blueprint orientation detected successfully' })
+  detectOrientationWithAi(
+    @Param('id') id: string,
+    @Req() req,
+  ) {
+    return this.blueprintService.detectScaleForBlueprint(id, req.user.internalId, req.user.globalRole);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Actualizar un blueprint' })

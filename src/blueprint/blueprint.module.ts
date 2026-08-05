@@ -15,6 +15,7 @@ import { Organization, OrganizationSchema } from 'src/organization/schemas/organ
 import { Project, ProjectSchema } from 'src/project/schemas/project.schema';
 import { ActivityLogsModule } from 'src/activity-logs/activity-logs.module';
 import { ScaleDetectionModule } from 'src/scale-detection/scale-detection.module';
+import { OrientationDetectionModule } from 'src/orientation-detection/orientation-detection.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ScaleDetectionModule } from 'src/scale-detection/scale-detection.module
     AuthModule,
     ActivityLogsModule,
     ScaleDetectionModule,
+    OrientationDetectionModule,
   ],
   controllers: [BlueprintController],
   providers: [

@@ -51,4 +51,13 @@ export class UpdateBlueprintDto {
   @IsString()
   @IsIn(['ai', 'manual'])
   scale_source?: string;
+
+  @IsOptional()
+  @IsNumber()
+  orientation?: number;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['ai', 'manual'])
+  orientation_source?: string;
 }
