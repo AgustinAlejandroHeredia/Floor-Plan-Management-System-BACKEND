@@ -11,6 +11,8 @@ import { InvitationModule } from './invitation/invitation.module';
 import { OrganizationMembershipModule } from './organization_membership/organization_membership.module';
 import { ProjectMembershipModule } from './project_membership/project_membership.module';
 import { ThumbnailModule } from './thumbnail/thumbnail.module';
+import { ModelRoutes } from './routes/model.routes';
+import { ModelService } from './services/model.service';
 
 // MONGOOSE
 import { MongooseModule } from '@nestjs/mongoose';
@@ -79,13 +81,14 @@ import { APP_GUARD } from '@nestjs/core';
     StorageModule,
 
   ],
-  controllers: [AppController],
+  controllers: [AppController, ModelRoutes],
   providers: [
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    AppService   
+    AppService,
+    ModelService,
   ],
 })
 export class AppModule {}

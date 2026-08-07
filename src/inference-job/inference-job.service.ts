@@ -340,7 +340,8 @@ export class InferenceJobService implements OnModuleInit {
 
       const modelsJsonPath = path.join(
         process.cwd(),
-        'models',
+        'src',
+        'data',
         'models.json',
       );
 
@@ -842,7 +843,8 @@ export class InferenceJobService implements OnModuleInit {
   getAvailableModels() {
     const modelsJsonPath = path.join(
       process.cwd(),
-      'models',
+      'src',
+      'data',
       'models.json',
     );
 
