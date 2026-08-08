@@ -24,6 +24,10 @@ const UserSchema = new mongoose.Schema(
   { strict: false },
 );
 
+function normalizeEmail(email) {
+  return (email || '').trim().toLowerCase();
+}
+
 const User = mongoose.model('User', UserSchema);
 
 // ─── CLI argument parser ────────────────────────────────────────────────────────
@@ -85,16 +89,18 @@ async function main() {
   await mongoose.connect(uri);
 
   try {
-    const existing = await User.findOne({ email: args.email });
+    const normalizedEmail = normalizeEmail(args.email);
+    const existing = await User.findOne({ email: normalizedEmail });
 
     if (existing) {
       const previousRole = existing.globalRole;
       if (previousRole === 'super_admin') {
-        console.log(`"${existing.name}" (${args.email}) is already a superuser. No changes made.`);
+        console.log(`"${existing.name}" (${normalizedEmail}) is already a superuser. No changes made.`);
       } else {
         existing.globalRole = 'super_admin';
+        existing.email = normalizedEmail;
         await existing.save();
-        console.log(`Promoted "${existing.name}" (${args.email}) from "${previousRole}" to "super_admin".`);
+        console.log(`Promoted "${existing.name}" (${normalizedEmail}) from "${previousRole}" to "super_admin".`);
       }
       return;
     }
@@ -111,13 +117,13 @@ async function main() {
 
     const created = await User.create({
       authProviderId: args.authId,
-      email: args.email,
-      name: args.name || args.email,
+      email: normalizedEmail,
+      name: args.name || normalizedEmail,
       picture: '',
       globalRole: 'super_admin',
     });
 
-    console.log(`Created superuser "${created.name}" (${args.email}) with auth ID "${args.authId}".`);
+    console.log(`Created superuser "${created.name}" (${normalizedEmail}) with auth ID "${args.authId}".`);
   } finally {
     await mongoose.disconnect();
   }

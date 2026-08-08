@@ -23,19 +23,16 @@ export class ModelRoutes {
     return { model: await this.modelService.getModelById(id) };
   }
 
-  @UserRoles(UserRole.SUPERADMIN)
   @Post()
   async create(@Body() body: any) {
     return { model: await this.modelService.addModel(body) };
   }
 
-  @UserRoles(UserRole.SUPERADMIN)
   @Put(':id')
   async update(@Param('id') id: string, @Body() body: any) {
     return { model: await this.modelService.updateModel(id, body) };
   }
 
-  @UserRoles(UserRole.SUPERADMIN)
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return { deleted: await this.modelService.deleteModel(id) };

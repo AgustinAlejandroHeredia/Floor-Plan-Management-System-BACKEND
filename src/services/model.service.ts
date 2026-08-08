@@ -25,6 +25,12 @@ export class ModelService {
     }
   }
 
+  private getDefaultKey(model: any) {
+    const specialty = model?.AEC_speciality ?? '';
+    const task = model?.task ?? '';
+    return [task, specialty].filter(Boolean).join(':').trim();
+  }
+
   async getAllModels() {
     const data = await this.readFile();
     return data.models ?? [];
@@ -44,9 +50,22 @@ export class ModelService {
     if (models.some((entry) => entry.id === model.id)) {
       throw new ConflictException('Model with this id already exists');
     }
-    models.push(model);
+
+    const normalizedModel = { ...model };
+    if (normalizedModel.defaultModel) {
+      const defaultKey = this.getDefaultKey(normalizedModel);
+      normalizedModel.defaultFor = defaultKey || undefined;
+      for (const entry of models) {
+        if (this.getDefaultKey(entry) === defaultKey) {
+          entry.defaultModel = false;
+          delete entry.defaultFor;
+        }
+      }
+    }
+
+    models.push(normalizedModel);
     await this.writeFile({ models });
-    return model;
+    return normalizedModel;
   }
 
   async updateModel(id: string, update: any) {
@@ -55,7 +74,23 @@ export class ModelService {
     if (index === -1) {
       throw new NotFoundException('Model not found');
     }
+
     const updated = { ...models[index], ...update };
+    const shouldSetAsDefault = Boolean(updated.defaultModel);
+
+    if (shouldSetAsDefault) {
+      const defaultKey = this.getDefaultKey(updated);
+      updated.defaultFor = defaultKey || undefined;
+      for (const entry of models) {
+        if (entry.id !== updated.id && this.getDefaultKey(entry) === defaultKey) {
+          entry.defaultModel = false;
+          delete entry.defaultFor;
+        }
+      }
+    } else {
+      delete updated.defaultFor;
+    }
+
     models[index] = updated;
     await this.writeFile({ models });
     return updated;
