@@ -25,7 +25,7 @@ export class ScaleDetectionService {
       child.on('close', () => {
         const stderr = Buffer.concat(stderrChunks).toString('utf8');
         if (stderr) {
-          console.log('[scale_orientation_detector stderr]', stderr);
+          console.log('[orientation_detector stderr]', stderr);
         }
 
         const modelLoaded = /Modelo|Model found in cache|Downloaded model|Modelo \'/.test(stderr);

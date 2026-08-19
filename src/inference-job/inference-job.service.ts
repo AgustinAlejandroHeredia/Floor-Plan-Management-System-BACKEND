@@ -443,7 +443,9 @@ export class InferenceJobService implements OnModuleInit {
       }
 
       const dto: UpdateSectionViewsDto = {
-        sectionViews: updatedJob.result![0].predictions.map(prediction => ({
+        sectionViews: updatedJob.result!
+          .flatMap((modelResult: any) => modelResult?.predictions ?? [])
+          .map(prediction => ({
           type: 'rectangle',
 
           coordsList: [
@@ -597,10 +599,8 @@ export class InferenceJobService implements OnModuleInit {
         'inference_engine.py',
       );
 
-      const pythonExecutable =
-        this.configService.get<string>(
-          'PYTHON_EXECUTABLE',
-          'python3',
+      const pythonExecutable = getPythonExecutable(
+        this.configService.get<string>('PYTHON_EXECUTABLE'),
         );
 
       console.log(
@@ -796,10 +796,14 @@ export class InferenceJobService implements OnModuleInit {
         'scale_orientation_detector.py',
       );
 
+
       const pythonExecutable = getPythonExecutable(
         this.configService.get<string>('PYTHON_EXECUTABLE'),
       );
 
+      console.log(
+        `Starting YOLO scale keypoints: ${pythonExecutable} ${scriptPath} ${imagePath}`,
+      );
       const child = spawn(pythonExecutable, [scriptPath, imagePath]);
 
       const stdoutChunks: Buffer[] = [];
@@ -811,7 +815,7 @@ export class InferenceJobService implements OnModuleInit {
       child.on('close', () => {
         const stderr = Buffer.concat(stderrChunks).toString('utf8');
         if (stderr) {
-          console.log('[scale_orientation_detector stderr]', stderr);
+          console.log('[scale_detector stderr]', stderr);
         }
 
         const stdout = Buffer.concat(stdoutChunks).toString('utf8');
