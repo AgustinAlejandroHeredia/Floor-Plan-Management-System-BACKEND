@@ -12,12 +12,10 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { model, Model, Types } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
-import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import axios from 'axios';
-import { getPythonExecutable } from 'src/utils/python-executable';
 
 import {
   InferenceJob,
@@ -25,6 +23,7 @@ import {
   InferenceJobStatus,
 } from './schemas/inference-job.schema';
 import { InferenceJobGateway } from './inference-job.gateway';
+import { InferenceDetectionService } from './inference-detection.service';
 import {
   Blueprint,
   BlueprintDocument,
@@ -73,6 +72,7 @@ export class InferenceJobService implements OnModuleInit {
     private readonly gateway: InferenceJobGateway,
     private readonly organizationMembershipService: OrganizationMembershipService,
     private readonly activityLogsService: ActivityLogsService,
+    private readonly inferenceDetectionService: InferenceDetectionService,
   ) {
     this.maxConcurrent = this.configService.get<number>(
       'INFERENCE_MAX_CONCURRENT',
@@ -402,24 +402,18 @@ export class InferenceJobService implements OnModuleInit {
         // =============================================
 
         const result =
-          await this.runYoloInference(
+          await this.inferenceDetectionService.detect(
             tempFilePath,
             matchedModel.model_type,
             matchedModel.id,
             signal,
           );
 
-        results.push(result);
-
-        // =============================================
-        // EMIT INDIVIDUAL RESULT
-        // =============================================
-
-        this.gateway.emitJobUpdate(
-          jobId,
-          InferenceJobStatus.PROCESSED,
-          result,
-        );
+        results.push({
+          modelId: matchedModel.id,
+          modelName: `${matchedModel.name} ${matchedModel.version}`,
+          ...result,
+        });
       }
 
       // =====================================================
@@ -442,10 +436,22 @@ export class InferenceJobService implements OnModuleInit {
         throw new Error('update failed')
       }
 
+      const aggregatedPredictions = updatedJob.result!.flatMap(
+        (modelResult: any) => modelResult?.predictions ?? [],
+      );
+
+      const modelSummaries = updatedJob.result!.map(
+        (modelResult: any) => ({
+          modelId: modelResult?.modelId ?? null,
+          modelName: modelResult?.modelName ?? 'Unknown model',
+          count: Array.isArray(modelResult?.predictions)
+            ? modelResult.predictions.length
+            : 0,
+        }),
+      );
+
       const dto: UpdateSectionViewsDto = {
-        sectionViews: updatedJob.result!
-          .flatMap((modelResult: any) => modelResult?.predictions ?? [])
-          .map(prediction => ({
+        sectionViews: aggregatedPredictions.map(prediction => ({
           type: 'rectangle',
 
           coordsList: [
@@ -477,41 +483,18 @@ export class InferenceJobService implements OnModuleInit {
       )
 
       // =====================================================
-      // SCALE & ORIENTATION DETECTION
+      // EMIT FINAL RESULT
+      // Emitted once, after every selected model has finished,
+      // with predictions aggregated across all of them - not
+      // per-model, so multi-model jobs don't resolve early on
+      // the frontend and lose every model after the first.
       // =====================================================
 
-      try {
-        const scaleOrientation = await this.runScaleOrientationDetection(
-          tempFilePath,
-          signal,
-        );
-
-        const aiFields: Record<string, unknown> = {};
-
-        if (scaleOrientation.scale !== null && scaleOrientation.scale !== undefined) {
-          aiFields['scale'] = scaleOrientation.scale;
-          aiFields['scale_source'] = 'ai';
-        }
-
-        if (scaleOrientation.orientation !== null && scaleOrientation.orientation !== undefined) {
-          aiFields['orientation'] = scaleOrientation.orientation;
-          aiFields['orientation_source'] = 'ai';
-        }
-
-        if (Object.keys(aiFields).length > 0) {
-          await this.blueprintModel.findByIdAndUpdate(
-            new Types.ObjectId(updatedJob!.blueprintId),
-            aiFields,
-          );
-
-          this.gateway.emitScaleOrientationDetected(jobId, {
-            scale: scaleOrientation.scale,
-            orientation: scaleOrientation.orientation,
-          });
-        }
-      } catch (scaleOrientationErr: unknown) {
-        console.warn('Scale/orientation detection failed:', scaleOrientationErr);
-      }
+      this.gateway.emitJobUpdate(
+        jobId,
+        InferenceJobStatus.PROCESSED,
+        { predictions: aggregatedPredictions, modelSummaries },
+      );
 
     } catch (err: unknown) {
 
@@ -578,270 +561,6 @@ export class InferenceJobService implements OnModuleInit {
           .catch(() => {});
       }
     }
-  }
-
-  private runYoloInference(
-    imagePath: string,
-    modelType: string,
-    modelId: string,
-    signal: AbortSignal,
-  ): Promise<Record<string, unknown>> {
-
-    return new Promise((resolve, reject) => {
-
-      if (signal.aborted) {
-        return reject(signal.reason);
-      }
-
-      const scriptPath = path.join(
-        process.cwd(),
-        'scripts',
-        'inference_engine.py',
-      );
-
-      const pythonExecutable = getPythonExecutable(
-        this.configService.get<string>('PYTHON_EXECUTABLE'),
-        );
-
-      console.log(
-        `Starting YOLO inference: ${pythonExecutable} ${scriptPath} ${imagePath}`,
-      );
-
-      const child = spawn(
-        pythonExecutable,
-        [
-          scriptPath,
-          imagePath,
-          imagePath, // dummy model_path to satisfy engine validation
-          modelType,
-          modelId,
-        ],
-      );
-
-      const stdoutChunks: Buffer[] = [];
-      const stderrChunks: Buffer[] = [];
-
-      let exitCode: number | null = null;
-      let stdoutEnded = false;
-      let stderrEnded = false;
-      let processClosed = false;
-      let settled = false;
-
-      const settle = (
-        fn: () => void,
-      ) => {
-
-        if (settled) return;
-
-        settled = true;
-
-        signal.removeEventListener(
-          'abort',
-          abortHandler,
-        );
-
-        fn();
-      };
-
-      const tryFinish = () => {
-
-        if (
-          !stdoutEnded ||
-          !stderrEnded ||
-          !processClosed
-        ) {
-          return;
-        }
-
-        if (signal.aborted) {
-
-          settle(() =>
-            reject(signal.reason),
-          );
-
-          return;
-        }
-
-        const stdout =
-          Buffer.concat(stdoutChunks)
-            .toString('utf8');
-
-        const stderr =
-          Buffer.concat(stderrChunks)
-            .toString('utf8');
-
-        if (exitCode !== 0) {
-
-          settle(() =>
-            reject(
-              new Error(
-                `YOLO process exited with code ${exitCode}: ${stderr}`,
-              ),
-            ),
-          );
-
-          return;
-        }
-
-        try {
-
-          const match = stdout.match(
-            /<predictions>([\s\S]*?)<\/predictions>/,
-          );
-
-          const jsonStr =
-            match
-              ? match[1].trim()
-              : stdout.trim();
-
-          settle(() =>
-            resolve(
-              JSON.parse(jsonStr) as Record<string, unknown>,
-            ),
-          );
-
-        } catch {
-
-          settle(() =>
-            reject(
-              new Error(
-                `Failed to parse YOLO output: ${stdout}`,
-              ),
-            ),
-          );
-        }
-      };
-
-      const abortHandler = () => {
-
-        child.kill('SIGTERM');
-
-        settle(() =>
-          reject(signal.reason),
-        );
-      };
-
-      signal.addEventListener(
-        'abort',
-        abortHandler,
-        { once: true },
-      );
-
-      child.stdout.on(
-        'data',
-        (chunk: Buffer) =>
-          stdoutChunks.push(chunk),
-      );
-
-      child.stdout.on(
-        'end',
-        () => {
-
-          stdoutEnded = true;
-
-          tryFinish();
-        },
-      );
-
-      child.stderr.on(
-        'data',
-        (chunk: Buffer) =>
-          stderrChunks.push(chunk),
-      );
-
-      child.stderr.on(
-        'end',
-        () => {
-
-          stderrEnded = true;
-
-          tryFinish();
-        },
-      );
-
-      child.on(
-        'close',
-        (code) => {
-
-          exitCode = code;
-
-          processClosed = true;
-
-          tryFinish();
-        },
-      );
-
-      child.on(
-        'error',
-        (err) =>
-          settle(() =>
-            reject(err),
-          ),
-      );
-    });
-  }
-
-  private runScaleOrientationDetection(
-    imagePath: string,
-    signal: AbortSignal,
-  ): Promise<{ scale: number | null; orientation: number | null }> {
-    return new Promise((resolve) => {
-      if (signal.aborted) {
-        return resolve({ scale: null, orientation: null });
-      }
-
-      const scriptPath = path.join(
-        process.cwd(),
-        'scripts',
-        'scale_orientation_detector.py',
-      );
-
-
-      const pythonExecutable = getPythonExecutable(
-        this.configService.get<string>('PYTHON_EXECUTABLE'),
-      );
-
-      console.log(
-        `Starting YOLO scale keypoints: ${pythonExecutable} ${scriptPath} ${imagePath}`,
-      );
-      const child = spawn(pythonExecutable, [scriptPath, imagePath]);
-
-      const stdoutChunks: Buffer[] = [];
-      const stderrChunks: Buffer[] = [];
-
-      child.stdout.on('data', (chunk: Buffer) => stdoutChunks.push(chunk));
-      child.stderr.on('data', (chunk: Buffer) => stderrChunks.push(chunk));
-
-      child.on('close', () => {
-        const stderr = Buffer.concat(stderrChunks).toString('utf8');
-        if (stderr) {
-          console.log('[scale_detector stderr]', stderr);
-        }
-
-        const stdout = Buffer.concat(stdoutChunks).toString('utf8');
-        try {
-          const match = stdout.match(
-            /<scale_orientation>([\s\S]*?)<\/scale_orientation>/,
-          );
-          if (match) {
-            const parsed = JSON.parse(match[1].trim()) as {
-              scale: number | null;
-              orientation: number | null;
-            };
-            resolve(parsed);
-          } else {
-            resolve({ scale: null, orientation: null });
-          }
-        } catch {
-          resolve({ scale: null, orientation: null });
-        }
-      });
-
-      child.on('error', (err) => {
-        console.warn('[scale_orientation_detector] spawn error:', err);
-        resolve({ scale: null, orientation: null });
-      });
-    });
   }
 
   getAvailableModels() {

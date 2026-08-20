@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { InferenceJobService } from './inference-job.service';
+import { InferenceDetectionService } from './inference-detection.service';
 import { InferenceJob, InferenceJobStatus } from './schemas/inference-job.schema';
 import { UserRole } from 'src/user/common/role.enum';
 import { Blueprint } from 'src/blueprint/schemas/blueprint.schema';
@@ -36,6 +37,7 @@ describe('InferenceJobService', () => {
     let mockFileStorageService: any
     let mockConfigService: any
     let mockInferenceJobGateway: any
+    let mockInferenceDetectionService: any
 
     beforeEach(async () => {
 
@@ -70,6 +72,7 @@ describe('InferenceJobService', () => {
         mockFileStorageService = {}
         mockConfigService = { get: jest.fn() }
         mockInferenceJobGateway = { emit: jest.fn() }
+        mockInferenceDetectionService = { detect: jest.fn() }
 
         const module =
             await Test.createTestingModule({
@@ -102,6 +105,10 @@ describe('InferenceJobService', () => {
                     {
                         provide: InferenceJobGateway,
                         useValue: mockInferenceJobGateway,
+                    },
+                    {
+                        provide: InferenceDetectionService,
+                        useValue: mockInferenceDetectionService,
                     },
                 ],
             }).compile()

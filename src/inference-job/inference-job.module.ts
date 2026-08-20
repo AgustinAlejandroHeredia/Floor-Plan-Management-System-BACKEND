@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { InferenceJobService } from './inference-job.service';
+import { InferenceDetectionService } from './inference-detection.service';
 import { InferenceJobController } from './inference-job.controller';
 import { InferenceJobGateway } from './inference-job.gateway';
 import { InferenceJob, InferenceJobSchema } from './schemas/inference-job.schema';
@@ -20,7 +21,7 @@ import { ActivityLogsModule } from 'src/activity-logs/activity-logs.module';
     ActivityLogsModule,
   ],
   controllers: [InferenceJobController],
-  providers: [InferenceJobService, InferenceJobGateway],
+  providers: [InferenceJobService, InferenceDetectionService, InferenceJobGateway],
   exports: [InferenceJobService],
 })
 export class InferenceJobModule {}
