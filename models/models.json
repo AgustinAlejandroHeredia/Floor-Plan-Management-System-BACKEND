@@ -43,6 +43,48 @@
       }
     },
            {
+      "id": "v1.0-yolo8x-LayoutFeatureExtractor",
+      "name": "Blueprint Layout Feature Detector",
+      "AEC_speciality": "Blueprint Layout classification",
+      "task": "detector",
+      "model_type": "ultralytics", 
+      "version": "1.0.0",
+      "model": "yolo8x",
+        "provenance": {
+              "trained released": "18/07/2024",
+              "trained_by": "Martin Urbieta",
+              "dataset": "150dpi-BBcrop_640_1024_2048_r4096_640xp",
+              "base_images": "",
+              "bg_images": "",
+              "train_images": "896",
+              "val_images": "244",
+              "test_images": "",
+              "epochs": "923",
+              "hours":"-",
+              "notebook":"042-Yolo_640.ipynb"
+      },
+      "metrics": {
+        "mAP50": {
+          "Box":   0.97,
+          "Mask":  0.0,
+          "Pose":  0.0
+        },
+        "mAP50-95": {
+          "Box": 0.97,
+          "Mask":  0.0,
+          "Pose": 0.0
+        }
+      },
+
+      "trained by": " Martin Urbieta  ",
+      "drive_id": "1MebQMW_nGMoUeAeyKlu18Aa92tIuqQCO",
+      "config": {
+        "confidence": 0.4,
+        "slice_height": 640,
+        "slice_width": 640
+      }
+    },
+           {
       "id": "v1.2-yolo11mPose-DimDetector",
       "name": "Keypoints Dimensions Detector",
       "AEC_speciality": "Blueprint dimensions",
