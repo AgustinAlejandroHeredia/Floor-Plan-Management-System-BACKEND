@@ -98,19 +98,19 @@ export class AccessGuard implements CanActivate {
     if (orgRoles) {
       const organizationId = req.params.organizationId;
 
-      if (!organizationId) {
-        throw new ForbiddenException('Missing organizationId');
-      }
-
-      const membership = await this.orgMembershipModel.findOne({
-        userId: new Types.ObjectId(userId),
-        organizationId: new Types.ObjectId(organizationId),
-      });
-
-      if (membership) {
-        checks.push(orgRoles.includes(membership.organizationRole as OrganizationRole));
-      } else {
+      if (!organizationId || !Types.ObjectId.isValid(organizationId) || !Types.ObjectId.isValid(userId)) {
         checks.push(false);
+      } else {
+        const membership = await this.orgMembershipModel.findOne({
+          userId: new Types.ObjectId(userId),
+          organizationId: new Types.ObjectId(organizationId),
+        });
+
+        if (membership) {
+          checks.push(orgRoles.includes(membership.organizationRole as OrganizationRole));
+        } else {
+          checks.push(false);
+        }
       }
     }
 
@@ -118,19 +118,19 @@ export class AccessGuard implements CanActivate {
     if (projectRoles) {
       const projectId = req.params.projectId;
 
-      if (!projectId) {
-        throw new ForbiddenException('Missing projectId');
-      }
-
-      const membership = await this.projectMembershipModel.findOne({
-        userId: new Types.ObjectId(userId),
-        projectId: new Types.ObjectId(projectId),
-      });
-
-      if (membership) {
-        checks.push(projectRoles.includes(membership.projectRole));
-      } else {
+      if (!projectId || !Types.ObjectId.isValid(projectId) || !Types.ObjectId.isValid(userId)) {
         checks.push(false);
+      } else {
+        const membership = await this.projectMembershipModel.findOne({
+          userId: new Types.ObjectId(userId),
+          projectId: new Types.ObjectId(projectId),
+        });
+
+        if (membership) {
+          checks.push(projectRoles.includes(membership.projectRole));
+        } else {
+          checks.push(false);
+        }
       }
     }
 

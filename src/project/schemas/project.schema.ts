@@ -8,15 +8,17 @@ export type ProjectDocument = Project & Document;
 
 @Schema({ _id: false })
 export class CustomField {
-    @Prop({ required: true })
+    @Prop({ required: true, type: String })
     name: string;
 
-    @Prop({ required: true, enum: CustomFieldType })
+    @Prop({ required: true, type: String, enum: Object.values(CustomFieldType) })
     type: CustomFieldType;
 
     @Prop({ required: true, type: SchemaTypes.Mixed })
     value: string | number | Date
 }
+
+export const CustomFieldSchema = SchemaFactory.createForClass(CustomField);
 
 @Schema()
 export class Project {
@@ -41,19 +43,21 @@ export class Project {
 
     @Prop({ 
         required: true,
+        type: String,
         default: "1",
     })
     levels: string
 
     @Prop({
         required: true,
+        type: Boolean,
         default: false,
     })
     basement: boolean
 
 
     @Prop({
-        type: [CustomField],
+        type: [CustomFieldSchema],
         default: [],
     })
     customFields: CustomField[]

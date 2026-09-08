@@ -24,12 +24,12 @@
       "metrics": {
         "mAP50": {
           "Box": 0.995,
-          "Mask": 0.0,
+          "Mask": 0,
           "Pose": 0.995
         },
         "mAP50-95": {
           "Box": 0.993,
-          "Mask": 0.0,
+          "Mask": 0,
           "Pose": 0.995
         }
       },
@@ -66,12 +66,12 @@
       "metrics": {
         "mAP50": {
           "Box": 0.9418,
-          "Mask": 0.0,
+          "Mask": 0,
           "Pose": 0.94151
         },
         "mAP50-95": {
           "Box": 0.8993,
-          "Mask": 0.0,
+          "Mask": 0,
           "Pose": 0.93919
         }
       },
@@ -145,7 +145,7 @@
           "Mask": 0.7758
         },
         "mAP50-95": {
-          "Box": 0.6800,
+          "Box": 0.68,
           "Mask": 0.5995
         }
       },
@@ -155,6 +155,42 @@
         "confidence": 0.4,
         "slice_height": 928,
         "slice_width": 928
+      }
+    },
+    {
+      "config": {
+        "confidence": 0.4,
+        "slice_height": 640,
+        "slice_width": 640
+      },
+      "defaultModel": true,
+      "id": "v1.0-yolo8x-LayoutFeatureExtractor",
+      "name": "Blueprint Layout Feature Detector",
+      "AEC_speciality": "Blueprint Layout classification",
+      "task": "object detection",
+      "model": "yolo8x",
+      "version": "1.0.0",
+      "model_type": "ultralytics",
+      "status": "latest",
+      "drive_id": "1MebQMW_nGMoUeAeyKlu18Aa92tIuqQCO",
+      "provenance": {
+        "trained_by": "Martin Urbieta",
+        "dataset": "150dpi-BBcrop_640_1024_2048_r4096_640xp",
+        "trained_released": "17/07/2024",
+        "epochs": "896",
+        "train_images": "896",
+        "val_images": "244",
+        "test_images": "0",
+        "notebook": "042-Yolo_640.ipynb"
+      },
+      "defaultFor": "object detection:Blueprint Layout classification",
+      "metrics": {
+        "mAP50": {
+          "Box": 0.97
+        },
+        "mAP50-95": {
+          "Box": 0.97
+        }
       }
     }
   ]

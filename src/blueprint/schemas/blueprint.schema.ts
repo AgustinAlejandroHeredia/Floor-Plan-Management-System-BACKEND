@@ -116,6 +116,14 @@ export class Blueprint {
   })
   sectionViews: SectionView[];
 
+  // SUGGESTED SUB-VIEWS FROM THE LAYOUT DETECTOR (pending approve/reject,
+  // NOT confirmed elements - kept separate from sectionViews above)
+  @Prop({
+    type: [SectionView],
+    default: [],
+  })
+  detectedLayoutFeatures: SectionView[];
+
   @Prop({
     type: [String],
     enum: SpecialtyTag,
@@ -172,6 +180,14 @@ export class Blueprint {
     default: [],
   })
   cropsMade: CropMade[];
+
+  // Set when this blueprint was created by approving a suggested region
+  // from the layout detector (e.g. 'floorplan', 'titleblock', 'view').
+  // Deliberately a free string, not the same enum as `view` above - most
+  // of the detector's classes (titleblock, note, table, detail, xsec)
+  // aren't a viewing direction at all, only 'floorplan' loosely is.
+  @Prop({ required: false, type: String })
+  layoutClass?: string;
 }
 
 export const BlueprintSchema = SchemaFactory.createForClass(Blueprint);

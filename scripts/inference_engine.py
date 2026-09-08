@@ -44,7 +44,7 @@ def main():
     args = parser.parse_args()
 
     base_dir = Path(__file__).resolve().parent.parent
-    default_manifest = base_dir / "models" / "models.json"
+    default_manifest = base_dir / "src" / "data" / "models.json"
     cache_dir = base_dir / "models" / "cache"
 
     if not os.path.exists(args.image_path):
@@ -66,6 +66,11 @@ def main():
         sys.exit(1)
 
     # Resolve filename and check cache
+    # NOTE: this is a raw string comparison, unlike SAHI's own AutoDetectionModel,
+    # which normalizes aliases ("yolov8"/"yolov11"/"yolo11"/"yolo26" -> "ultralytics")
+    # before it does anything - see ULTRALYTICS_MODEL_NAMES in sahi/auto_model.py.
+    # model_type in models.json must be the literal string "ultralytics", never one
+    # of those aliases, or this picks .pth for what's actually a .pt file.
     ext = ".pt" if model_meta.get("model_type") == "ultralytics" else ".pth"
     local_model_path = cache_dir / f"{model_meta['id']}_v{model_meta['version']}{ext}"
     

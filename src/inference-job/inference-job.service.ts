@@ -47,6 +47,7 @@ interface ModelConfig {
   version: string;
   drive_id: string;
   model_type: string;
+  AEC_speciality?: string;
 }
 
 const TERMINAL_STATUSES = new Set([
@@ -475,11 +476,25 @@ export class InferenceJobService implements OnModuleInit {
         })),
       }
 
+      // A layout-detection job (the raw-sheet "which regions are
+      // floorplan/titleblock/etc" model) writes its suggestions to
+      // detectedLayoutFeatures instead of sectionViews - those are
+      // pending review, not confirmed elements of an already-classified
+      // blueprint, and must never overwrite real specialty detections.
+      const isLayoutDetectionJob =
+        selectedModels.length > 0 &&
+        selectedModels.every((selectedModel) => {
+          const m = availableModels.find(
+            (m) => `${m.name} ${m.version}` === selectedModel,
+          );
+          return m?.AEC_speciality === 'Blueprint Layout classification';
+        });
+
       await this.blueprintModel.findByIdAndUpdate(
         new Types.ObjectId(updatedJob!.blueprintId),
-        {
-          sectionViews: dto.sectionViews,
-        },
+        isLayoutDetectionJob
+          ? { detectedLayoutFeatures: dto.sectionViews }
+          : { sectionViews: dto.sectionViews },
       )
 
       // =====================================================

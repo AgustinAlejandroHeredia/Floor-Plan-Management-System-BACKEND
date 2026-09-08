@@ -82,4 +82,8 @@ export class CreateBlueprintDto {
   @IsOptional()
   @IsNumber()
   height?: number;
+
+  @IsOptional()
+  @IsString()
+  layoutClass?: string;
 }

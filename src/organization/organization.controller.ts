@@ -125,6 +125,74 @@ export class OrganizationController {
     );
   }
 
+  // GET ORGANIZATION ACTION PERMISSIONS
+  @Get('/actionPermissions/:organizationId')
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @OrganizationRoles(
+    OrganizationRole.ADMIN,
+    OrganizationRole.MEMBER,
+  )
+  @ApiOperation({ summary: 'Get organization action permissions - all organization members' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Organization action permissions obtained successfully' })
+  getOrganizationActionPermissions(
+    @Param('organizationId') organizationId: string
+  ){
+    return this.organizationService.getOrganizationActionPermissions(organizationId)
+  }
+
+  // GET MY ORGANIZATIONS
+  @Get('me/organizations')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get all my organizations - all web page users' })
+  @ApiResponse({ status: 200, description: 'All my organizations obtained successfully' })
+  getMyOrganizations(
+    @Req() req,
+  ){
+    return this.organizationService.getMyOrganizations(req.user.internalId)
+  }
+
+  // GET MY ORGANIZATIONS WITH ROLES
+  @Get('me/organizationsAndRoles')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get all my organizations and it roles - all web page users' })
+  @ApiResponse({ status: 200, description: 'All my organizations obtained successfully' })
+  getMyOrganizationWithRoles(
+    @Req() req,
+  ){
+    return this.organizationService.getMyOrganizationsAndRoles(req.user.internalId)
+  }
+
+  // GET MY ORGANIZATIONS IN COMMON WITH THIS USER ID
+  @Get('organizationsInCommon/:userId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get organizations in common with this user id' })
+  @ApiParam({ name: 'organizationId', type: String })
+  @ApiResponse({ status: 200, description: 'Organizations obtained successfully' })
+  getOrganizationsInCommon(
+    @Req() req,
+    @Param('userId') userId: string,
+  ){
+    return this.organizationService.getOrganizationsInCommon(req.user.internalId, userId)
+  }
+
+  // GET MY ORGANIZATION ROLE
+  @Get('me/role/:organizationId')
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @OrganizationRoles(
+    OrganizationRole.ADMIN,
+    OrganizationRole.MEMBER,
+  )
+  @ApiOperation({ summary: 'Get my role with organization id - only organization member users' })
+  @ApiParam({ name: 'organizationId', type: String })
+  @ApiResponse({ status: 200, description: 'Role obtained successfully' })
+  myProjectRole(
+    @Req() req,
+    @Param('organizationId') organizationId: string,
+  ){
+    return this.organizationService.myOrganizationRole(req.user.internalId, organizationId)
+  }
+
   // GET ONE
   @Get(':organizationId')
   @UseGuards(JwtAuthGuard, AccessGuard)
@@ -141,22 +209,6 @@ export class OrganizationController {
     @Param('organizationId') organizationId: string,
   ) {
     return this.organizationService.findOneWithMembershipVerification(req.user.internalId, organizationId, req.user.globalRole);
-  }
-
-  // GET ORGANIZATION ACTION PERMISSIONS
-  @Get('/actionPermissions/:organizationId')
-  @UseGuards(JwtAuthGuard, AccessGuard)
-  @OrganizationRoles(
-    OrganizationRole.ADMIN,
-    OrganizationRole.MEMBER,
-  )
-  @ApiOperation({ summary: 'Get organization action permissions - all organization members' })
-  @ApiParam({ name: 'id', type: String })
-  @ApiResponse({ status: 200, description: 'Organization action permissions obtained successfully' })
-  getOrganizationActionPermissions(
-    @Param('organizationId') organizationId: string
-  ){
-    return this.organizationService.getOrganizationActionPermissions(organizationId)
   }
 
   // UPDATE
@@ -220,58 +272,6 @@ export class OrganizationController {
     @Body('organizationRole') organizationRole?: OrganizationRole,
   ){
     return this.organizationService.addUserToOrganization(organizationId, userId, organizationRole, req.user.internalId)
-  }
-
-  // GET MY ORGANIZATIONS
-  @Get('me/organizations')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all my organizations - all web page users' })
-  @ApiResponse({ status: 200, description: 'All my organizations obtained successfully' })
-  getMyOrganizations(
-    @Req() req,
-  ){
-    return this.organizationService.getMyOrganizations(req.user.internalId)
-  }
-
-  // GET MY ORGANIZATIONS WITH ROLES
-  @Get('me/organizationsAndRoles')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all my organizations and it roles - all web page users' })
-  @ApiResponse({ status: 200, description: 'All my organizations obtained successfully' })
-  getMyOrganizationWithRoles(
-    @Req() req,
-  ){
-    return this.organizationService.getMyOrganizationsAndRoles(req.user.internalId)
-  }
-
-  // GET MY ORGANIZATIONS IN COMMON WITH THIS USER ID
-  @Get('organizationsInCommon/:userId')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get organizations in common with this user id' })
-  @ApiParam({ name: 'organizationId', type: String })
-  @ApiResponse({ status: 200, description: 'Organizations obtained successfully' })
-  getOrganizationsInCommon(
-    @Req() req,
-    @Param('userId') userId: string,
-  ){
-    return this.organizationService.getOrganizationsInCommon(req.user.internalId, userId)
-  }
-
-  // GET MY ORGANIZATION ROLE
-  @Get('me/role/:organizationId')
-  @UseGuards(JwtAuthGuard, AccessGuard)
-  @OrganizationRoles(
-    OrganizationRole.ADMIN,
-    OrganizationRole.MEMBER,
-  )
-  @ApiOperation({ summary: 'Get my role with organization id - only organization member users' })
-  @ApiParam({ name: 'organizationId', type: String })
-  @ApiResponse({ status: 200, description: 'Role obtained successfully' })
-  myProjectRole(
-    @Req() req,
-    @Param('organizationId') organizationId: string,
-  ){
-    return this.organizationService.myOrganizationRole(req.user.internalId, organizationId)
   }
 
   // UPDATE USER ROLE

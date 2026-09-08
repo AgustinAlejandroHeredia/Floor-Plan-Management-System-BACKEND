@@ -20,6 +20,7 @@ import * as https from 'https';
 import * as os from 'os';
 import * as path from 'path';
 import { SectionViewDto, UpdateSectionViewsDto } from './dto/update-section-views';
+import { UpdateDetectedLayoutFeaturesDto } from './dto/update-detected-layout-features.dto';
 import { UserRole } from 'src/user/common/role.enum';
 import { ScaleDetectionService } from 'src/scale-detection/scale-detection.service';
 import { OrientationDetectionService } from 'src/orientation-detection/orientation-detection.service';
@@ -700,6 +701,44 @@ export class BlueprintService {
         {key:'blueprintName', value:blueprint.blueprintName}
       ]
     })
+
+    return updatedblueprint;
+  }
+
+  // Persists approve/reject/resize actions on the pending layout-detection
+  // suggestions. Deliberately its own method rather than folding into
+  // update(), mirroring why updateSectionViews is separate: UpdateBlueprintDto
+  // validates sectionViews against a different (and currently mismatched)
+  // shape, and detectedLayoutFeatures shouldn't inherit that ambiguity.
+  async updateDetectedLayoutFeatures(
+    blueprintId: string,
+    dto: UpdateDetectedLayoutFeaturesDto,
+    userId: string,
+    userGlobalRole: string,
+  ): Promise<BlueprintDocument> {
+
+    const blueprint = await this.blueprintModel.findById(new Types.ObjectId(blueprintId))
+
+    if (!blueprint) {
+      throw new NotFoundException('Blueprint not found');
+    }
+
+    await this.organizationMembershipService.validateOrganizationAccess(userId, blueprint.organizationId.toString(), userGlobalRole)
+
+    const updatedblueprint =
+      await this.blueprintModel.findByIdAndUpdate(
+        new Types.ObjectId(blueprintId),
+        {
+          detectedLayoutFeatures: dto.detectedLayoutFeatures,
+        },
+        {
+          new: true,
+        },
+      );
+
+    if (!updatedblueprint) {
+      throw new NotFoundException('Blueprint not found');
+    }
 
     return updatedblueprint;
   }

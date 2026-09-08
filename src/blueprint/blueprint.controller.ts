@@ -31,6 +31,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { UpdateSectionViewsDto } from './dto/update-section-views';
+import { UpdateDetectedLayoutFeaturesDto } from './dto/update-detected-layout-features.dto';
 import { AccessGuard } from 'src/auth/guards/access.guard';
 import { UserRoles } from 'src/auth/decorators/user-roles.decorator';
 import { UserRole } from 'src/user/common/role.enum';
@@ -265,6 +266,30 @@ export class BlueprintController {
   ) {
     const blueprint =
       await this.blueprintService.updateSectionViews(
+        blueprintId,
+        dto,
+        req.user.internalId,
+        req.user.globalRole,
+      );
+
+    if (!blueprint) {
+      throw new NotFoundException('Blueprint not found');
+    }
+
+    return blueprint;
+  }
+
+  @Patch(':id/detected-layout-features')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Updates the pending layout-detection suggestions (approve/reject/resize, before any crop is made)' })
+  @ApiParam({ name: 'id', type: String })
+  async updateDetectedLayoutFeatures(
+    @Param('id') blueprintId: string,
+    @Body() dto: UpdateDetectedLayoutFeaturesDto,
+    @Req() req,
+  ) {
+    const blueprint =
+      await this.blueprintService.updateDetectedLayoutFeatures(
         blueprintId,
         dto,
         req.user.internalId,
