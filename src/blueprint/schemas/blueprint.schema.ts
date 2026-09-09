@@ -77,6 +77,51 @@ export class LevelsRange {
   top?: number
 }
 
+// Transform aligning THIS blueprint onto its architectural/structural counterpart.
+// `matrix` is 2x3 and maps this blueprint's pixels -> `alignedWith`'s pixels.
+@Schema({ _id: false })
+export class BlueprintAlignment {
+  @Prop({ required: true, type: Types.ObjectId, ref: 'Blueprint' })
+  alignedWith: Types.ObjectId;
+
+  @Prop({ type: [[Number]], default: [] })
+  matrix: number[][];
+
+  @Prop({ required: false, type: Number })
+  scale?: number;
+
+  @Prop({ required: false, type: Number })
+  rotationDeg?: number;
+
+  @Prop({ type: [Number], default: [] })
+  translation: number[];
+
+  @Prop({ required: false, type: Number })
+  confidence?: number;
+
+  @Prop({ required: false, type: Number })
+  rmse?: number;
+
+  @Prop({ required: false, type: String })
+  model?: string;
+
+  @Prop({ required: false, type: String })
+  method?: string;
+
+  @Prop({
+    type: String,
+    enum: ['ok', 'weak', 'footprint', 'failed', 'needs_review', 'manual'],
+    default: 'needs_review',
+  })
+  status: string;
+
+  @Prop({ type: String, enum: ['ai', 'manual'], default: 'ai' })
+  source: string;
+
+  @Prop({ type: Date, default: Date.now })
+  updatedAt: Date;
+}
+
 @Schema()
 export class Blueprint {
   @Prop({ required: true, type: String })
@@ -188,6 +233,11 @@ export class Blueprint {
   // aren't a viewing direction at all, only 'floorplan' loosely is.
   @Prop({ required: false, type: String })
   layoutClass?: string;
+
+  // Alignment of this blueprint onto its architectural/structural counterpart,
+  // computed by the auto-alignment module (or set manually from the UI).
+  @Prop({ required: false, type: BlueprintAlignment })
+  alignment?: BlueprintAlignment;
 }
 
 export const BlueprintSchema = SchemaFactory.createForClass(Blueprint);

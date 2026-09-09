@@ -24,6 +24,7 @@ import { UpdateDetectedLayoutFeaturesDto } from './dto/update-detected-layout-fe
 import { UserRole } from 'src/user/common/role.enum';
 import { ScaleDetectionService } from 'src/scale-detection/scale-detection.service';
 import { OrientationDetectionService } from 'src/orientation-detection/orientation-detection.service';
+import { AutoAlignmentService } from 'src/auto-alignment/auto-alignment.service';
 import { Organization, OrganizationDocument } from 'src/organization/schemas/organization.schema';
 import { OrganizationMembershipService } from 'src/organization_membership/organization_membership.service';
 import { Project, ProjectDocument } from 'src/project/schemas/project.schema';
@@ -45,6 +46,7 @@ export class BlueprintService {
     private readonly activityLogsService: ActivityLogsService,
     private readonly scaleDetectionService: ScaleDetectionService,
     private readonly orientationDetectionService: OrientationDetectionService,
+    private readonly autoAlignmentService: AutoAlignmentService,
   ) {}
 
   // CREATE (upload + mongo)
@@ -147,6 +149,14 @@ export class BlueprintService {
           {key:'blueprintName', value:savedBlueprint.blueprintName}
         ]
       })
+
+      // Kick off alignment against the architectural/structural counterpart.
+      // Fire-and-forget: never blocks the upload; result arrives over the
+      // /alignment socket and is persisted on the blueprint. Skip crops
+      // (sub-regions) - they are not standalone plans to align.
+      if (!dto.originalBlueprintId) {
+        this.autoAlignmentService.alignOnCreate(savedBlueprint)
+      }
 
       return savedBlueprint
 
