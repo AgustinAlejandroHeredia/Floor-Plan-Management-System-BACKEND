@@ -59,3 +59,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 .env
 node_modules
+
+# Python (floorplan_align lib bytecode caches)
+__pycache__/
+*.pyc

@@ -379,6 +379,12 @@ export class BlueprintService {
       ]
     })
 
+    // If the discipline tag changed, (re)run alignment now that the discipline is
+    // known - upload-time alignment often runs before the blueprint is tagged.
+    if (dto.specialties !== undefined && updated && !updated.originalBlueprintId) {
+      this.autoAlignmentService.alignOnCreate(updated)
+    }
+
     return updated;
   }
 

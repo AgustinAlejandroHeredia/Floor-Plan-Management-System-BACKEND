@@ -21,10 +21,32 @@ import { AlignRunnerService, AlignmentResult } from './align-runner.service';
 import { AutoAlignmentGateway } from './auto-alignment.gateway';
 import { SaveAlignmentDto } from './dto/save-alignment.dto';
 
-const COMPLEMENT: Partial<Record<SpecialtyTag, SpecialtyTag>> = {
-  [SpecialtyTag.ARCHITECTURE]: SpecialtyTag.STRUCTURE,
-  [SpecialtyTag.STRUCTURE]: SpecialtyTag.ARCHITECTURE,
-};
+/**
+ * Disciplines that are an actual floor-plan drawing and can be aligned. Every one of
+ * them (structure, electrical, gas, water, sewerage, ...) is drawn over the same
+ * building footprint, so any pair can be registered. NOTES and TABLES are annotation /
+ * schedule sheets, never an alignment target.
+ */
+const ALIGNABLE_SPECIALTIES: readonly SpecialtyTag[] = [
+  SpecialtyTag.ARCHITECTURE,
+  SpecialtyTag.STRUCTURE,
+  SpecialtyTag.ELECTRICAL,
+  SpecialtyTag.GAS,
+  SpecialtyTag.COLD_WATER,
+  SpecialtyTag.HOT_WATER,
+  SpecialtyTag.SEWERAGE,
+  SpecialtyTag.RAINWATER,
+];
+
+/**
+ * Preferred reference frame to align onto. Every service discipline overlays the
+ * architectural base, so architecture is the best anchor; structure is the next-best
+ * when no architectural plan exists. Anything else is only an anchor of last resort.
+ */
+const ANCHOR_PRIORITY: readonly SpecialtyTag[] = [
+  SpecialtyTag.ARCHITECTURE,
+  SpecialtyTag.STRUCTURE,
+];
 
 interface AlignOptions {
   userId?: string;        // when set, authorize the caller
@@ -33,12 +55,14 @@ interface AlignOptions {
 }
 
 /**
- * Aligns a blueprint onto its architectural/structural counterpart with the
- * `floorplan_align` library. The FPMS detectors emit no columns, so the automatic
- * path is georeference (detected scale + orientation pin scale/rotation, MI solves
- * translation) and is always coarse -> flagged `needs_review` for the manual UI.
- * Column landmarks are still passed when present, so a future structural/column
- * detector upgrades this to a precise fit with no further changes.
+ * Registers a blueprint onto another discipline's plan of the same building/floor with
+ * the `floorplan_align` library. Works for any pairing -- structural, electrical, gas,
+ * water, sewerage, ... -- onto the architectural base (or onto each other when no
+ * architectural plan exists). The FPMS detectors emit no columns, so the automatic path
+ * is georeference (detected scale + orientation pin scale/rotation, MI solves
+ * translation) and is always coarse -> flagged `needs_review` for the manual UI. Column
+ * landmarks are still passed when present, so a future column detector upgrades this to
+ * a precise fit with no further changes.
  */
 @Injectable()
 export class AutoAlignmentService {
@@ -193,21 +217,57 @@ export class AutoAlignmentService {
     }
   }
 
+  private isAlignable(blueprint: BlueprintDocument): boolean {
+    return (blueprint.specialties ?? []).some((s) => ALIGNABLE_SPECIALTIES.includes(s));
+  }
+
+  /** How good an alignment anchor a plan is (lower = better; see ANCHOR_PRIORITY). */
+  private anchorRank(blueprint: BlueprintDocument): number {
+    const specs = blueprint.specialties ?? [];
+    const idx = ANCHOR_PRIORITY.findIndex((a) => specs.includes(a));
+    return idx === -1 ? ANCHOR_PRIORITY.length : idx;
+  }
+
+  /**
+   * Pick the best plan in the same project to align `blueprint` onto. Discipline-
+   * agnostic: an MEP/electrical/gas/water plan registers onto the architectural base,
+   * architecture onto structure, etc. Ranked by (1) overlapping floor/level, (2) a
+   * different discipline, (3) stronger anchor (architecture > structure > other),
+   * (4) most recent.
+   */
   private async findCounterpart(blueprint: BlueprintDocument): Promise<BlueprintDocument | null> {
-    const discipline = (blueprint.specialties ?? []).find((s) => s in COMPLEMENT);
-    if (!discipline) return null;
+    if (!this.isAlignable(blueprint)) return null; // notes/tables sheets never align
+    const ownSpecialties = new Set(blueprint.specialties ?? []);
+
     const candidates = await this.blueprintModel
       .find({
         projectId: blueprint.projectId,
         _id: { $ne: blueprint._id },
-        specialties: COMPLEMENT[discipline],
+        originalBlueprintId: null, // ignore cropped children (matches null or missing)
+        specialties: { $in: [...ALIGNABLE_SPECIALTIES] },
       })
       .sort({ creationDate: -1 })
       .exec();
     if (!candidates.length) return null;
-    // prefer a counterpart on the same floor/level; else the most recent
-    const sameLevel = candidates.filter((c) => this.levelsOverlap(blueprint.levels, c.levels));
-    return sameLevel[0] ?? candidates[0];
+
+    const differsFrom = (c: BlueprintDocument): boolean =>
+      (c.specialties ?? []).some((s) => ALIGNABLE_SPECIALTIES.includes(s) && !ownSpecialties.has(s));
+
+    const scored = candidates.map((c, recency) => ({
+      c,
+      sameLevel: this.levelsOverlap(blueprint.levels, c.levels) ? 0 : 1,
+      differ: differsFrom(c) ? 0 : 1,
+      anchor: this.anchorRank(c),
+      recency, // candidates are already sorted newest-first
+    }));
+    scored.sort(
+      (a, b) =>
+        a.sameLevel - b.sameLevel ||
+        a.differ - b.differ ||
+        a.anchor - b.anchor ||
+        a.recency - b.recency,
+    );
+    return scored[0].c;
   }
 
   private levelsOverlap(a?: LevelsRange[], b?: LevelsRange[]): boolean {
