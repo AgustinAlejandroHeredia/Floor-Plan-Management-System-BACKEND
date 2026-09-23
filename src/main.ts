@@ -6,6 +6,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 // Config
 import { ConfigService } from "@nestjs/config";
 import { ValidationPipe } from '@nestjs/common';
+import { getAuthTestModeUser } from './utils/auth-test-mode';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -22,6 +23,15 @@ async function bootstrap() {
     ],
     methods: 'GET,POST,PUT,DELETE,PATCH',
   })
+
+  const testModeUser = getAuthTestModeUser();
+  if (testModeUser) {
+    console.warn(
+      '\n*** AUTH_TEST_MODE ACTIVO: los endpoints protegidos NO validan JWT. ' +
+      `Suplantando al usuario ${testModeUser.internalId} (${testModeUser.globalRole}). ` +
+      'No usar fuera de pruebas locales. ***\n',
+    );
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({

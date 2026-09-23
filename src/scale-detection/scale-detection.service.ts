@@ -8,14 +8,20 @@ export interface ScaleDetectionResult {
   model_loaded: boolean;
 }
 
+/** 'yolo': cotas por YOLO-pose. 'lsd': Line Segment Detection, sin modelo. */
+export type ScaleDetectionMethod = 'yolo' | 'lsd';
+
 @Injectable()
 export class ScaleDetectionService {
-  detectScale(imagePath: string): Promise<ScaleDetectionResult> {
+  detectScale(
+    imagePath: string,
+    method: ScaleDetectionMethod = 'yolo',
+  ): Promise<ScaleDetectionResult> {
     return new Promise((resolve) => {
       const scriptPath = path.join(process.cwd(), 'scripts', 'detect_scale.py');
       const pythonExecutable = getPythonExecutable(process.env.PYTHON_EXECUTABLE);
 
-      const child = spawn(pythonExecutable, [scriptPath, imagePath]);
+      const child = spawn(pythonExecutable, [scriptPath, imagePath, method]);
       const stdoutChunks: Buffer[] = [];
       const stderrChunks: Buffer[] = [];
 

@@ -12,6 +12,7 @@ import {
   Patch,
   Res,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BlueprintService } from './blueprint.service';
@@ -29,12 +30,14 @@ import {
   ApiConsumes,
   ApiBody,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { UpdateSectionViewsDto } from './dto/update-section-views';
 import { UpdateDetectedLayoutFeaturesDto } from './dto/update-detected-layout-features.dto';
 import { AccessGuard } from 'src/auth/guards/access.guard';
 import { UserRoles } from 'src/auth/decorators/user-roles.decorator';
 import { UserRole } from 'src/user/common/role.enum';
+import type { ScaleDetectionMethod } from 'src/scale-detection/scale-detection.service';
 
 @ApiTags('Blueprints')
 @ApiBearerAuth('access-token')
@@ -141,12 +144,25 @@ export class BlueprintController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Detect the blueprint scale with AI and save it as AI-derived' })
   @ApiParam({ name: 'id', type: String })
+  @ApiQuery({
+    name: 'method',
+    required: false,
+    enum: ['yolo', 'lsd'],
+    description: "Estrategia de calculo: 'yolo' (modelo de cotas, por defecto) o 'lsd' (Line Segment Detection, sin modelo)",
+  })
   @ApiResponse({ status: 200, description: 'Blueprint scale detected successfully' })
   detectScaleWithAi(
     @Param('id') id: string,
     @Req() req,
+    @Query('method') method?: string,
   ) {
-    return this.blueprintService.detectScaleForBlueprint(id, req.user.internalId, req.user.globalRole);
+    const strategy: ScaleDetectionMethod = method === 'lsd' ? 'lsd' : 'yolo';
+    return this.blueprintService.detectScaleForBlueprint(
+      id,
+      req.user.internalId,
+      req.user.globalRole,
+      strategy,
+    );
   }
 
   @Patch(':id/orientation/ai')

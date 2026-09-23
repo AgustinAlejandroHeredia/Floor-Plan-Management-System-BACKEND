@@ -22,7 +22,7 @@ import * as path from 'path';
 import { SectionViewDto, UpdateSectionViewsDto } from './dto/update-section-views';
 import { UpdateDetectedLayoutFeaturesDto } from './dto/update-detected-layout-features.dto';
 import { UserRole } from 'src/user/common/role.enum';
-import { ScaleDetectionService } from 'src/scale-detection/scale-detection.service';
+import { ScaleDetectionService, ScaleDetectionMethod } from 'src/scale-detection/scale-detection.service';
 import { OrientationDetectionService } from 'src/orientation-detection/orientation-detection.service';
 import { AutoAlignmentService } from 'src/auto-alignment/auto-alignment.service';
 import { Organization, OrganizationDocument } from 'src/organization/schemas/organization.schema';
@@ -268,6 +268,7 @@ export class BlueprintService {
     id: string,
     userId: string,
     userGlobalRole: string,
+    method: ScaleDetectionMethod = 'yolo',
   ): Promise<{
     scale: number | null;
     scale_source: 'ai' | null;
@@ -306,7 +307,7 @@ export class BlueprintService {
     try {
       await fs.writeFile(tempFilePath, Buffer.from(response.data));
 
-      const aiResult = await this.scaleDetectionService.detectScale(tempFilePath);
+      const aiResult = await this.scaleDetectionService.detectScale(tempFilePath, method);
       const orientationResult = await this.orientationDetectionService.detectOrientation(tempFilePath);
 
       const aiScale = aiResult?.scale ?? null;
