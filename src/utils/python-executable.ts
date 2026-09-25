@@ -9,8 +9,14 @@ export function getPythonExecutable(explicitCommand?: string): string {
 
   const cwd = process.cwd();
   const venvCandidates = process.platform === 'win32'
-    ? [path.join(cwd, '.venv', 'Scripts', 'python.exe')]
-    : [path.join(cwd, '.venv', 'bin', 'python')];
+    ? [
+        path.join(cwd, '.venv-mmdet', 'Scripts', 'python.exe'),
+        path.join(cwd, '.venv', 'Scripts', 'python.exe'),
+      ]
+    : [
+        path.join(cwd, '.venv-mmdet', 'bin', 'python'),
+        path.join(cwd, '.venv', 'bin', 'python'),
+      ];
 
   for (const candidate of venvCandidates) {
     if (fs.existsSync(candidate)) {

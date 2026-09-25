@@ -21,15 +21,18 @@
 
 ## Python (inference script)
 
-The AI inference step runs `scripts/inference_engine.py`. Dependencies are declared in `pyproject.toml` (requires Python ≥ 3.13). MMDetection models additionally use the pinned `mmdet` and `mmengine` dependencies. Cascade models also require **full** `mmcv==2.1.0` with compiled operators; `mmcv-lite` is not sufficient. Full MMCV is not currently installable in this Windows/Python 3.13 environment, so configure `PYTHON_EXECUTABLE` to a compatible Python 3.12/Linux or WSL environment with the MMDetection stack installed before using Cascade models.
+The AI inference step runs `scripts/inference_engine.py`. For YOLO models, standard Python environments work. However, Cascade R-CNN models (MMDetection) require **full** `mmcv==2.1.0` with compiled C++/CUDA operators (`mmcv._ext`), which OpenMMLab only pre-builds for **Python 3.11** (not Python 3.12 or 3.13) on Windows.
+
+To set up the full environment (supporting both YOLO and Cascade MMDetection) on Windows using `uv`:
 
 ```bash
-python -m pip install uv
-uv sync
-
+uv venv .venv-mmdet --python 3.11
+uv pip install --python .venv-mmdet/Scripts/python.exe torch==2.1.0+cpu torchvision==0.16.0+cpu --find-links https://download.pytorch.org/whl/cpu/torch_stable.html
+uv pip install --python .venv-mmdet/Scripts/python.exe "mmcv==2.1.0" --find-links https://download.openmmlab.com/mmcv/dist/cpu/torch2.1.0/index.html "numpy<2.0.0"
+uv pip install --python .venv-mmdet/Scripts/python.exe "mmdet==3.3.0" "mmengine==0.10.7" "sahi>=0.11.36" "ultralytics>=8.4.47" "gdown>=5.0.0" "pydantic>=2.0.0" "scikit-image>=0.24.0" "rapidocr-onnxruntime>=1.4.4" pycocotools shapely python-dotenv
 ```
 
-Set `PYTHON_EXECUTABLE` in `.env` to the path of the virtualenv Python if it differs from `python3` (e.g. `.venv/bin/python`).
+The backend automatically detects and prefers `.venv-mmdet` if present, or you can explicitly set `PYTHON_EXECUTABLE` in `.env`.
 
 ## Environment
 

@@ -157,7 +157,7 @@ def main():
                     "MMDetection runtime is incomplete. Install mmdet==3.3.0 and "
                     "mmengine==0.10.7. "
                     f"{package_guidance} "
-                    "Full MMCV compiled operators may require Python 3.12 on Windows. "
+                    "Full MMCV compiled operators require Python 3.11 on Windows (pre-built wheels with C++/CUDA ops are only provided for Python <= 3.11). "
                     f"Interpreter: {sys.executable}. Original error: {error}"
                 ) from error
 
