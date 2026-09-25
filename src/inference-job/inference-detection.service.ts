@@ -22,6 +22,7 @@ export class InferenceDetectionService {
     modelType: string,
     modelId: string,
     signal: AbortSignal,
+    onPhase?: (phase: string) => void,
   ): Promise<Record<string, unknown>> {
 
     return new Promise((resolve, reject) => {
@@ -182,8 +183,12 @@ export class InferenceDetectionService {
 
       child.stderr.on(
         'data',
-        (chunk: Buffer) =>
-          stderrChunks.push(chunk),
+        (chunk: Buffer) => {
+          stderrChunks.push(chunk)
+          const output = chunk.toString('utf8')
+          const phases = [...output.matchAll(/\[phase:([^\]]+)\]/g)]
+          phases.forEach((match) => onPhase?.(match[1]))
+        },
       );
 
       child.stderr.on(

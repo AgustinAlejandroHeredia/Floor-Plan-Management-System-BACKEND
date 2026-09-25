@@ -74,7 +74,8 @@ export class InferenceJobGateway implements OnGatewayConnection {
     jobId: string,
     status: string,
     result: Record<string, unknown> | null,
+    phase?: string,
   ): void {
-    this.server.to(`job:${jobId}`).emit('inference:update', { status, result });
+    this.server.to(`job:${jobId}`).emit('inference:update', { status, result, phase });
   }
 }

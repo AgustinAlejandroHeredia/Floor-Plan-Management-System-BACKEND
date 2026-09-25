@@ -273,6 +273,7 @@ export class InferenceJobService implements OnModuleInit {
         status: InferenceJobStatus.PROCESSING,
       },
     );
+    this.gateway.emitJobUpdate(jobId, InferenceJobStatus.PROCESSING, null, 'preparing-image');
 
     let tempFilePath: string | null = null;
 
@@ -408,6 +409,12 @@ export class InferenceJobService implements OnModuleInit {
             matchedModel.model_type,
             matchedModel.id,
             signal,
+            (phase) => this.gateway.emitJobUpdate(
+              jobId,
+              InferenceJobStatus.PROCESSING,
+              null,
+              phase,
+            ),
           );
 
         results.push({

@@ -21,7 +21,7 @@
 
 ## Python (inference script)
 
-The AI inference step runs `scripts/yolo_inference.py`. Dependencies are declared in `pyproject.toml` (requires Python ≥ 3.13).
+The AI inference step runs `scripts/inference_engine.py`. Dependencies are declared in `pyproject.toml` (requires Python ≥ 3.13). MMDetection models additionally use the pinned `mmdet` and `mmengine` dependencies. Cascade models also require **full** `mmcv==2.1.0` with compiled operators; `mmcv-lite` is not sufficient. Full MMCV is not currently installable in this Windows/Python 3.13 environment, so configure `PYTHON_EXECUTABLE` to a compatible Python 3.12/Linux or WSL environment with the MMDetection stack installed before using Cascade models.
 
 ```bash
 python -m pip install uv

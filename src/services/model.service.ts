@@ -4,6 +4,7 @@ import * as path from 'path';
 
 const MODELS_FILE = path.join(process.cwd(), 'src', 'data', 'models.json');
 const TEMP_MODELS_FILE = path.join(process.cwd(), 'src', 'data', 'models.json.tmp');
+const CONFIGS_DIR = path.join(process.cwd(), 'models', 'configs');
 
 @Injectable()
 export class ModelService {
@@ -45,13 +46,28 @@ export class ModelService {
     return found;
   }
 
-  async addModel(model: any) {
+  private async saveConfigFile(modelId: string, file: Express.Multer.File): Promise<string> {
+    const extension = path.extname(file.originalname).toLowerCase();
+    if (!['.py', '.yaml', '.yml', '.json'].includes(extension)) {
+      throw new ConflictException('Unsupported model config file type');
+    }
+
+    await fs.mkdir(CONFIGS_DIR, { recursive: true });
+    const filename = `${modelId.replace(/[^a-zA-Z0-9._-]/g, '_')}${extension}`;
+    await fs.writeFile(path.join(CONFIGS_DIR, filename), file.buffer);
+    return path.join('models', 'configs', filename).replaceAll(path.sep, '/');
+  }
+
+  async addModel(model: any, configFile?: Express.Multer.File) {
     const models = await this.getAllModels();
     if (models.some((entry) => entry.id === model.id)) {
       throw new ConflictException('Model with this id already exists');
     }
 
     const normalizedModel = { ...model };
+    if (configFile) {
+      normalizedModel.config_file = await this.saveConfigFile(normalizedModel.id, configFile);
+    }
     if (normalizedModel.defaultModel) {
       const defaultKey = this.getDefaultKey(normalizedModel);
       normalizedModel.defaultFor = defaultKey || undefined;
@@ -68,7 +84,7 @@ export class ModelService {
     return normalizedModel;
   }
 
-  async updateModel(id: string, update: any) {
+  async updateModel(id: string, update: any, configFile?: Express.Multer.File) {
     const models = await this.getAllModels();
     const index = models.findIndex((model) => model.id === id);
     if (index === -1) {
@@ -76,6 +92,9 @@ export class ModelService {
     }
 
     const updated = { ...models[index], ...update };
+    if (configFile) {
+      updated.config_file = await this.saveConfigFile(updated.id, configFile);
+    }
     const shouldSetAsDefault = Boolean(updated.defaultModel);
 
     if (shouldSetAsDefault) {

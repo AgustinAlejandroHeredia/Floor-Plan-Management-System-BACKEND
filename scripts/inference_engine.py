@@ -3,6 +3,7 @@ import sys
 import json
 import os
 import argparse
+import time
 import gdown
 from pathlib import Path
 
@@ -18,15 +19,51 @@ def get_model_from_manifest(model_id, manifest_path):
     return None
 
 def download_model(drive_id, destination):
-    """Downloads model from Google Drive if it doesn't exist."""
-    if not os.path.exists(destination):
-        # We use stderr for logs so stdout remains clean for the JSON result
-        print(f"[*] Downloading model to {destination}...", file=sys.stderr)
-        url = f'https://drive.google.com/uc?id={drive_id}'
-        os.makedirs(os.path.dirname(destination), exist_ok=True)
-        gdown.download(url, destination, quiet=False)
+    """Download a model atomically, resuming an interrupted transfer."""
+    destination_path = Path(destination)
+
+    if destination_path.exists():
+        print(f"[+] Model found in cache: {destination_path}", file=sys.stderr)
     else:
-        print(f"[+] Model found in cache: {destination}", file=sys.stderr)
+        print("[phase:model-download]", file=sys.stderr, flush=True)
+        print(f"[*] Downloading model to {destination_path}...", file=sys.stderr)
+        url = f'https://drive.google.com/uc?id={drive_id}'
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+
+        last_error = None
+        for attempt in range(1, 4):
+            try:
+                partial_files = sorted(
+                    destination_path.parent.glob(destination_path.name + '*.part'),
+                    key=lambda file: file.stat().st_size,
+                    reverse=True,
+                )
+                for orphan in partial_files[1:]:
+                    orphan.unlink()
+
+                downloaded_path = gdown.download(
+                    url,
+                    str(destination_path),
+                    quiet=False,
+                    resume=True,
+                )
+                if not downloaded_path or not destination_path.exists():
+                    raise RuntimeError('Google Drive did not produce a complete download file')
+                break
+            except Exception as error:
+                last_error = error
+                if attempt == 3:
+                    raise
+                print(
+                    f"[!] Download attempt {attempt} failed: {error}. Retrying...",
+                    file=sys.stderr,
+                )
+                time.sleep(2 ** attempt)
+
+        if last_error and not destination_path.exists():
+            raise last_error
+
+    print("[phase:model-ready]", file=sys.stderr, flush=True)
         
 
 def main():
@@ -83,6 +120,7 @@ def main():
     # INFERENCE
 
     try:
+        print("[phase:inference]", file=sys.stderr, flush=True)
         from sahi import AutoDetectionModel
         from sahi.predict import get_sliced_prediction
     except ImportError:
@@ -95,6 +133,34 @@ def main():
         sys.exit(1)
 
     try:
+        if model_meta.get("model_type") == "mmdet":
+            try:
+                import mmcv  # noqa: F401
+                import mmengine  # noqa: F401
+                import mmdet  # noqa: F401
+                import mmcv._ext  # noqa: F401
+            except (ImportError, ModuleNotFoundError) as error:
+                mmcv_lite_installed = False
+                try:
+                    from importlib.metadata import version
+                    mmcv_lite_installed = version("mmcv-lite") is not None
+                except Exception:
+                    pass
+                package_guidance = (
+                    "mmcv-lite is installed, but it does not contain compiled operators. "
+                    "Uninstall mmcv-lite and install full mmcv==2.1.0."
+                    if mmcv_lite_installed
+                    else
+                    "Install full mmcv==2.1.0 (not mmcv-lite)."
+                )
+                raise RuntimeError(
+                    "MMDetection runtime is incomplete. Install mmdet==3.3.0 and "
+                    "mmengine==0.10.7. "
+                    f"{package_guidance} "
+                    "Full MMCV compiled operators may require Python 3.12 on Windows. "
+                    f"Interpreter: {sys.executable}. Original error: {error}"
+                ) from error
+
         import torch
         if args.device:
             device = args.device
@@ -105,9 +171,21 @@ def main():
         else:
             device = "cpu"
 
+        config_path = model_meta.get("config_file")
+        if model_meta.get("model_type") == "mmdet":
+            if not config_path:
+                raise RuntimeError(
+                    f"MMDetection model '{model_meta.get('name', args.model_id)}' has no config file. "
+                    "Upload one in the Model Registry."
+                )
+            config_path = str((base_dir / config_path).resolve())
+            if not os.path.exists(config_path):
+                raise RuntimeError(f"MMDetection config file not found: {config_path}")
+
         model = AutoDetectionModel.from_pretrained(
             model_type=model_meta.get("model_type", "ultralytics"),
             model_path=str(local_model_path),
+            config_path=config_path,
             confidence_threshold=args.confidence,
             device=device,
         )

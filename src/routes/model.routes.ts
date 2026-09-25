@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/jwt/jwt-auth.guard';
 import { AccessGuard } from 'src/auth/guards/access.guard';
 import { UserRoles } from 'src/auth/decorators/user-roles.decorator';
@@ -24,17 +25,24 @@ export class ModelRoutes {
   }
 
   @Post()
-  async create(@Body() body: any) {
-    return { model: await this.modelService.addModel(body) };
+  @UseInterceptors(FileInterceptor('configFile'))
+  async create(@Body('model') model: string, @Body() body: any, @UploadedFile() configFile?: Express.Multer.File) {
+    return { model: await this.modelService.addModel(this.parseModel(model, body), configFile) };
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() body: any) {
-    return { model: await this.modelService.updateModel(id, body) };
+  @UseInterceptors(FileInterceptor('configFile'))
+  async update(@Param('id') id: string, @Body('model') model: string, @Body() body: any, @UploadedFile() configFile?: Express.Multer.File) {
+    return { model: await this.modelService.updateModel(id, this.parseModel(model, body), configFile) };
   }
 
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return { deleted: await this.modelService.deleteModel(id) };
+  }
+
+  private parseModel(model: string | undefined, body: any): any {
+    if (model) return JSON.parse(model);
+    return body;
   }
 }

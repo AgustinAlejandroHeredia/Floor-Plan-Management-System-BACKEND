@@ -81,7 +81,8 @@
         "confidence": 0.4,
         "slice_height": 640,
         "slice_width": 640
-      }
+      },
+      "defaultModel": false
     },
     {
       "id": "v1.0-yolo26-arch",
@@ -192,6 +193,85 @@
           "Box": 0.97
         }
       }
+    },
+    {
+      "config": {
+        "confidence": 0.4,
+        "slice_height": 640,
+        "slice_width": 640
+      },
+      "defaultModel": true,
+      "id": "v1.3-yolo11mPose-DimDetector",
+      "name": "Keypoints Dimensions Detector",
+      "AEC_speciality": "Blueprint dimensions",
+      "task": "keypoints",
+      "model": "yolo11m",
+      "version": "1.3.0",
+      "model_type": "ultralytics",
+      "status": "latest",
+      "drive_id": "1EsbgcZN0E2q_848cWmo6E6XbYvPmv_KA",
+      "provenance": {
+        "trained_by": "Martin Villareal",
+        "dataset": "Synthetic Dimensions",
+        "trained_released": "14/9/2026",
+        "epochs": "789",
+        "train_images": "12000",
+        "val_images": "1500",
+        "test_images": "1500",
+        "hours": "104",
+        "notebook": "02-entrena.ipynb"
+      },
+      "defaultFor": "keypoints:Blueprint dimensions",
+      "metrics": {
+        "mAP50": {
+          "Box": 0.952,
+          "Pose": 0.952
+        },
+        "mAP50-95": {
+          "Box": 0.905,
+          "Pose": 0.948
+        }
+      }
+    },
+    {
+      "config": {
+        "confidence": 0.4,
+        "slice_height": 512,
+        "slice_width": 512
+      },
+      "defaultModel": true,
+      "id": "Structure Cascade BLD-ST",
+      "name": "Cascade RCNN Mask Structure 1.0",
+      "AEC_speciality": "Structure",
+      "task": "instance segmentation",
+      "model": "cascade",
+      "version": "1.0.0",
+      "model_type": "mmdet",
+      "status": "latest",
+      "drive_id": "1UnDyExF6XKDSnr9PSCxUoITb4l3XA7ZZ",
+      "provenance": {
+        "trained_by": "Martin Urbieta",
+        "dataset": "BLD-ST",
+        "trained_released": "24/09/2026",
+        "epochs": "4500",
+        "train_images": "599",
+        "val_images": "150",
+        "test_images": "0",
+        "hours": "100",
+        "notebook": "B037_SAHI_MMDet_custom_dataset_(structure_LifiaRun)_20260912"
+      },
+      "metrics": {
+        "mAP50": {
+          "Box": 0.607,
+          "Mask": 0.603
+        },
+        "mAP50-95": {
+          "Box": 0.518,
+          "Mask": 0.49
+        }
+      },
+      "defaultFor": "instance segmentation:Structure",
+      "config_file": "models/configs/Structure_Cascade_BLD-ST.py"
     }
   ]
 }
